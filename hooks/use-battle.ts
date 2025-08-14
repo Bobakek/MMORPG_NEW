@@ -2,13 +2,98 @@
 
 import { useState, useEffect } from "react"
 import type { BattleShip, BattleLog } from "@/types"
-import { battleShips } from "@/data"
+
+interface Mission {
+  id: string
+  name: string
+  enemies: BattleShip[]
+}
+
+const playerTemplate: BattleShip = {
+  id: "player1",
+  name: "USS Endeavor",
+  type: "Cruiser",
+  hull: 8500,
+  maxHull: 8500,
+  shield: 2400,
+  maxShield: 2400,
+  x: 150,
+  y: 200,
+  rotation: 0,
+  isPlayer: true,
+  isTargeted: false,
+  weapons: [
+    { name: "Heavy Pulse Laser", damage: 420, range: 15000, cooldown: 3000, currentCooldown: 0 },
+    { name: "Missile Launcher", damage: 680, range: 25000, cooldown: 5000, currentCooldown: 0 },
+  ],
+}
+
+const missions: Mission[] = [
+  {
+    id: "skirmish",
+    name: "Pirate Skirmish",
+    enemies: [
+      {
+        id: "enemy1",
+        name: "Crimson Raider",
+        type: "Destroyer",
+        hull: 4200,
+        maxHull: 6500,
+        shield: 1800,
+        maxShield: 2100,
+        x: 450,
+        y: 180,
+        rotation: 180,
+        isPlayer: false,
+        isTargeted: false,
+        weapons: [{ name: "Plasma Cannon", damage: 380, range: 12000, cooldown: 2500, currentCooldown: 0 }],
+      },
+      {
+        id: "enemy2",
+        name: "Shadow Strike",
+        type: "Frigate",
+        hull: 2800,
+        maxHull: 3200,
+        shield: 900,
+        maxShield: 1400,
+        x: 500,
+        y: 280,
+        rotation: 135,
+        isPlayer: false,
+        isTargeted: false,
+        weapons: [{ name: "Light Railgun", damage: 280, range: 18000, cooldown: 2000, currentCooldown: 0 }],
+      },
+    ],
+  },
+  {
+    id: "convoy",
+    name: "Convoy Ambush",
+    enemies: [
+      {
+        id: "enemy3",
+        name: "Escort Frigate",
+        type: "Frigate",
+        hull: 3000,
+        maxHull: 3000,
+        shield: 1000,
+        maxShield: 1000,
+        x: 470,
+        y: 200,
+        rotation: 180,
+        isPlayer: false,
+        isTargeted: false,
+        weapons: [{ name: "Light Cannon", damage: 220, range: 10000, cooldown: 2000, currentCooldown: 0 }],
+      },
+    ],
+  },
+]
 
 export function useBattle() {
-  const [ships, setShips] = useState<BattleShip[]>(battleShips)
+  const [currentMission, setCurrentMission] = useState<Mission>(missions[0])
+  const [ships, setShips] = useState<BattleShip[]>([playerTemplate, ...missions[0].enemies])
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null)
   const [battleLog, setBattleLog] = useState<BattleLog[]>([
-    { id: "1", timestamp: Date.now(), message: "Combat initiated. Prepare for battle!", type: "info" },
+    { id: "1", timestamp: Date.now(), message: "Mission initialized.", type: "info" },
   ])
   const [isInCombat, setIsInCombat] = useState(true)
   const [combatTimer, setCombatTimer] = useState(0)
@@ -147,6 +232,19 @@ export function useBattle() {
     }
   }, [isInCombat])
 
+  const startMission = (missionId: string) => {
+    const mission = missions.find((m) => m.id === missionId)
+    if (!mission) return
+    setShips([playerTemplate, ...mission.enemies])
+    setSelectedTarget(null)
+    setBattleLog([
+      { id: Date.now().toString(), timestamp: Date.now(), message: `Mission ${mission.name} started`, type: "info" },
+    ])
+    setCurrentMission(mission)
+    setIsInCombat(true)
+    setCombatTimer(0)
+  }
+
   return {
     ships,
     selectedTarget,
@@ -155,10 +253,14 @@ export function useBattle() {
     combatTimer,
     playerShip,
     enemyShips,
+    missions,
+    currentMission,
     handleAttack,
     handleTargetSelect,
+    startMission,
     getHealthPercentage,
     formatTime,
     calculateDistance,
   }
 }
+
