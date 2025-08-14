@@ -1,171 +1,24 @@
 "use client"
 
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Rocket, Shield, Zap, Package } from "lucide-react"
-import type { Ship } from "@/types"
-
-const playerShips: Ship[] = [
-  {
-    id: "1",
-    name: "USS Endeavor",
-    type: "cruiser",
-    hull: 8500,
-    maxHull: 8500,
-    shield: 2400,
-    maxShield: 2400,
-    armor: 1800,
-    maxArmor: 1800,
-    capacitor: 1200,
-    maxCapacitor: 1200,
-    location: "Sol - Station Alpha",
-    status: "docked",
-    maxCargo: 450,
-    modules: [
-      {
-        id: "1",
-        name: "Heavy Pulse Laser II",
-        type: "weapon",
-        slot: "high",
-        status: "online",
-        stats: { damage: 420, range: 15000 },
-      },
-      {
-        id: "2",
-        name: "Shield Booster II",
-        type: "defense",
-        slot: "mid",
-        status: "online",
-        stats: { shieldBoost: 25 },
-      },
-      {
-        id: "3",
-        name: "Armor Repairer II",
-        type: "defense",
-        slot: "low",
-        status: "online",
-        stats: { repairRate: 180 },
-      },
-    ],
-    cargo: [
-      { id: "1", name: "Tritanium", quantity: 1000, volume: 100 },
-      { id: "2", name: "Pyerite", quantity: 500, volume: 75 },
-    ],
-  },
-  {
-    id: "2",
-    name: "Stellar Hawk",
-    type: "frigate",
-    hull: 2800,
-    maxHull: 3200,
-    shield: 1100,
-    maxShield: 1400,
-    armor: 800,
-    maxArmor: 900,
-    capacitor: 600,
-    maxCapacitor: 800,
-    location: "Alpha Centauri - In Space",
-    status: "damaged",
-    maxCargo: 150,
-    modules: [
-      {
-        id: "4",
-        name: "Light Missile Launcher",
-        type: "weapon",
-        slot: "high",
-        status: "online",
-        stats: { damage: 280, range: 25000 },
-      },
-      {
-        id: "5",
-        name: "Afterburner II",
-        type: "propulsion",
-        slot: "low",
-        status: "damaged",
-        stats: { speedBoost: 150 },
-      },
-    ],
-    cargo: [{ id: "3", name: "Light Missiles", quantity: 200, volume: 20 }],
-  },
-  {
-    id: "3",
-    name: "Iron Fortress",
-    type: "battleship",
-    hull: 15000,
-    maxHull: 15000,
-    shield: 4200,
-    maxShield: 4200,
-    armor: 3500,
-    maxArmor: 3500,
-    capacitor: 2400,
-    maxCapacitor: 2400,
-    location: "Vega - Station Beta",
-    status: "docked",
-    maxCargo: 800,
-    modules: [
-      {
-        id: "6",
-        name: "Large Railgun Battery",
-        type: "weapon",
-        slot: "high",
-        status: "online",
-        stats: { damage: 850, range: 35000 },
-      },
-      {
-        id: "7",
-        name: "Capital Shield Booster",
-        type: "defense",
-        slot: "mid",
-        status: "online",
-        stats: { shieldBoost: 45 },
-      },
-      {
-        id: "8",
-        name: "Damage Control II",
-        type: "utility",
-        slot: "low",
-        status: "online",
-        stats: { resistanceBonus: 15 },
-      },
-    ],
-    cargo: [
-      { id: "4", name: "Heavy Water", quantity: 300, volume: 150 },
-      { id: "5", name: "Quantum Processors", quantity: 50, volume: 25 },
-    ],
-  },
-]
+import { useFleetManagement } from "@/hooks/use-fleet-management"
 
 interface FleetManagementProps {
   onBack: () => void
 }
 
 export function FleetManagement({ onBack }: FleetManagementProps) {
-  const [selectedShip, setSelectedShip] = useState<Ship | null>(null)
-
-  const getStatusColor = (status: Ship["status"]) => {
-    switch (status) {
-      case "docked":
-        return "text-green-400 border-green-400"
-      case "in-space":
-        return "text-blue-400 border-blue-400"
-      case "in-warp":
-        return "text-purple-400 border-purple-400"
-      case "damaged":
-        return "text-red-400 border-red-400"
-      default:
-        return "text-gray-400 border-gray-400"
-    }
-  }
-
-  const getHealthPercentage = (current: number, max: number) => {
-    return Math.max(0, (current / max) * 100)
-  }
-
-  const getTotalCargoVolume = (ship: Ship) => {
-    return ship.cargo.reduce((total, item) => total + item.volume, 0)
-  }
+  const {
+    ships,
+    selectedShip,
+    selectShip,
+    getStatusColor,
+    getHealthPercentage,
+    getTotalCargoVolume,
+  } = useFleetManagement()
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-black relative">
@@ -201,21 +54,21 @@ export function FleetManagement({ onBack }: FleetManagementProps) {
             <Rocket className="w-8 h-8 text-pink-600" />
             <h1 className="text-2xl font-bold text-white">Fleet Management</h1>
           </div>
-          <div className="flex items-center space-x-4">
-            <Badge variant="outline" className="text-pink-600 border-pink-600">
-              {playerShips.length} Ships
-            </Badge>
-          </div>
+            <div className="flex items-center space-x-4">
+              <Badge variant="outline" className="text-pink-600 border-pink-600">
+                {ships.length} Ships
+              </Badge>
+            </div>
         </div>
       </header>
 
       <div className="relative z-10 flex h-[calc(100vh-80px)]">
         {/* Ship List */}
-        <div className="w-80 p-4 space-y-4 overflow-y-auto">
-          {playerShips.map((ship) => (
-            <Card
-              key={ship.id}
-              onClick={() => setSelectedShip(ship)}
+          <div className="w-80 p-4 space-y-4 overflow-y-auto">
+            {ships.map((ship) => (
+              <Card
+                key={ship.id}
+                onClick={() => selectShip(ship)}
               className={`cursor-pointer transition-all duration-200 ${
                 selectedShip?.id === ship.id
                   ? "bg-slate-800/80 border-pink-600/60 scale-105"
