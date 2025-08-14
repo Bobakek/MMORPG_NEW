@@ -1,102 +1,30 @@
 "use client"
 
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, Package, BarChart3 } from "lucide-react"
-
-interface MarketItem {
-  id: string
-  name: string
-  category: "minerals" | "modules" | "ships" | "fuel"
-  buyPrice: number
-  sellPrice: number
-  volume: number
-  change: number
-  stock: number
-}
-
-const marketItems: MarketItem[] = [
-  {
-    id: "1",
-    name: "Tritanium",
-    category: "minerals",
-    buyPrice: 4.25,
-    sellPrice: 4.89,
-    volume: 125000,
-    change: 2.3,
-    stock: 890000,
-  },
-  {
-    id: "2",
-    name: "Pyerite",
-    category: "minerals",
-    buyPrice: 8.15,
-    sellPrice: 9.42,
-    volume: 89000,
-    change: -1.8,
-    stock: 456000,
-  },
-  {
-    id: "3",
-    name: "Heavy Pulse Laser II",
-    category: "modules",
-    buyPrice: 2850000,
-    sellPrice: 3200000,
-    volume: 45,
-    change: 5.7,
-    stock: 23,
-  },
-  {
-    id: "4",
-    name: "Antimatter Charge L",
-    category: "fuel",
-    buyPrice: 125.5,
-    sellPrice: 142.8,
-    volume: 15600,
-    change: 0.8,
-    stock: 78000,
-  },
-  {
-    id: "5",
-    name: "Rifter",
-    category: "ships",
-    buyPrice: 850000,
-    sellPrice: 950000,
-    volume: 12,
-    change: -3.2,
-    stock: 8,
-  },
-]
+import { useTradingHub } from "@/hooks/use-trading-hub"
 
 interface TradingHubProps {
   onBack: () => void
 }
 
 export function TradingHub({ onBack }: TradingHubProps) {
-  const [selectedMarket, setSelectedMarket] = useState("Jita IV")
-  const [selectedCategory, setSelectedCategory] = useState<"all" | MarketItem["category"]>("all")
-  const [wallet] = useState(125000000) // 125M ISK
-  const [selectedItem, setSelectedItem] = useState<MarketItem | null>(null)
-
-  const markets = [
-    { name: "Jita IV", tax: 1.0, security: "high" },
-    { name: "Amarr VIII", tax: 1.2, security: "high" },
-    { name: "Dodixie IX", tax: 1.1, security: "high" },
-    { name: "Rens VI", tax: 1.3, security: "low" },
-  ]
-
-  const filteredItems = marketItems.filter((item) => selectedCategory === "all" || item.category === selectedCategory)
-
-  const formatISK = (amount: number) => {
-    if (amount >= 1000000) {
-      return `${(amount / 1000000).toFixed(1)}M ISK`
-    } else if (amount >= 1000) {
-      return `${(amount / 1000).toFixed(1)}K ISK`
-    }
-    return `${amount.toFixed(2)} ISK`
-  }
+  const {
+    marketItems,
+    markets,
+    selectedMarket,
+    selectedCategory,
+    selectedItem,
+    wallet,
+    formatISK,
+    selectMarket,
+    selectCategory,
+    selectItem,
+    buyItem,
+    sellItem,
+  } = useTradingHub()
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-black text-white p-6">
@@ -129,7 +57,7 @@ export function TradingHub({ onBack }: TradingHubProps) {
                 {markets.map((market) => (
                   <Button
                     key={market.name}
-                    onClick={() => setSelectedMarket(market.name)}
+                    onClick={() => selectMarket(market.name)}
                     variant={selectedMarket === market.name ? "default" : "outline"}
                     className={`w-full justify-between ${
                       selectedMarket === market.name
@@ -176,7 +104,7 @@ export function TradingHub({ onBack }: TradingHubProps) {
                   <div className="flex gap-2">
                     <Button
                       size="sm"
-                      onClick={() => setSelectedCategory("all")}
+                      onClick={() => selectCategory("all")}
                       variant={selectedCategory === "all" ? "default" : "outline"}
                       className={
                         selectedCategory === "all"
@@ -188,7 +116,7 @@ export function TradingHub({ onBack }: TradingHubProps) {
                     </Button>
                     <Button
                       size="sm"
-                      onClick={() => setSelectedCategory("minerals")}
+                      onClick={() => selectCategory("minerals")}
                       variant={selectedCategory === "minerals" ? "default" : "outline"}
                       className={
                         selectedCategory === "minerals"
@@ -200,7 +128,7 @@ export function TradingHub({ onBack }: TradingHubProps) {
                     </Button>
                     <Button
                       size="sm"
-                      onClick={() => setSelectedCategory("modules")}
+                      onClick={() => selectCategory("modules")}
                       variant={selectedCategory === "modules" ? "default" : "outline"}
                       className={
                         selectedCategory === "modules"
@@ -212,7 +140,7 @@ export function TradingHub({ onBack }: TradingHubProps) {
                     </Button>
                     <Button
                       size="sm"
-                      onClick={() => setSelectedCategory("ships")}
+                      onClick={() => selectCategory("ships")}
                       variant={selectedCategory === "ships" ? "default" : "outline"}
                       className={
                         selectedCategory === "ships"
@@ -227,10 +155,10 @@ export function TradingHub({ onBack }: TradingHubProps) {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {filteredItems.map((item) => (
+                  {marketItems.map((item) => (
                     <div
                       key={item.id}
-                      onClick={() => setSelectedItem(item)}
+                      onClick={() => selectItem(item)}
                       className={`p-4 rounded-lg cursor-pointer transition-all ${
                         selectedItem?.id === item.id
                           ? "bg-amber-600/20 border border-amber-600/50"
@@ -299,7 +227,12 @@ export function TradingHub({ onBack }: TradingHubProps) {
                       <div className="p-3 bg-green-900/20 rounded-lg border border-green-600/30">
                         <div className="text-green-400 text-xl font-bold">{formatISK(selectedItem.buyPrice)}</div>
                         <div className="text-sm text-slate-300">Best Buy Price</div>
-                        <Button className="w-full mt-3 bg-green-600 hover:bg-green-700">Buy Now</Button>
+                        <Button
+                          onClick={() => buyItem(selectedItem)}
+                          className="w-full mt-3 bg-green-600 hover:bg-green-700"
+                        >
+                          Buy Now
+                        </Button>
                       </div>
                     </div>
                     <div className="space-y-3">
@@ -307,7 +240,12 @@ export function TradingHub({ onBack }: TradingHubProps) {
                       <div className="p-3 bg-red-900/20 rounded-lg border border-red-600/30">
                         <div className="text-red-400 text-xl font-bold">{formatISK(selectedItem.sellPrice)}</div>
                         <div className="text-sm text-slate-300">Best Sell Price</div>
-                        <Button className="w-full mt-3 bg-red-600 hover:bg-red-700">Sell Now</Button>
+                        <Button
+                          onClick={() => sellItem(selectedItem)}
+                          className="w-full mt-3 bg-red-600 hover:bg-red-700"
+                        >
+                          Sell Now
+                        </Button>
                       </div>
                     </div>
                   </div>
