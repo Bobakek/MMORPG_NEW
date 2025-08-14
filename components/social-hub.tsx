@@ -1,69 +1,27 @@
 "use client"
 
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, MessageSquare, Building, Users, Send, UserPlus, Mail, Shield } from "lucide-react"
-import type { ChatMessage, OnlinePlayer, Corporation } from "@/types"
-
-const chatMessages: ChatMessage[] = [
-  {
-    id: 1,
-    channel: "global",
-    player: "CommanderX",
-    message: "Looking for mining fleet in Caldari space",
-    time: "14:23",
-  },
-  { id: 2, channel: "local", player: "SpacePirate", message: "Anyone want to do some PvP?", time: "14:25" },
-  { id: 3, channel: "corp", player: "CEO_Alpha", message: "Corp meeting tonight at 20:00 EVE time", time: "14:27" },
-  { id: 4, channel: "global", player: "TraderBob", message: "Selling rare minerals, good prices!", time: "14:30" },
-]
-
-const onlinePlayers: OnlinePlayer[] = [
-  { id: 1, name: "CommanderX", status: "online", location: "Jita IV", corporation: "Deep Space Mining" },
-  { id: 2, name: "SpacePirate", status: "in-combat", location: "Rancer", corporation: "Red Federation" },
-  { id: 3, name: "TraderBob", status: "online", location: "Amarr VIII", corporation: "Trade Empire" },
-  { id: 4, name: "CEO_Alpha", status: "online", location: "Dodixie IX", corporation: "Deep Space Mining" },
-  { id: 5, name: "MinerJoe", status: "mining", location: "Hulmate V", corporation: "Deep Space Mining" },
-]
-
-const corporations: Corporation[] = [
-  {
-    id: 1,
-    name: "Deep Space Mining",
-    members: 247,
-    description: "Industrial corporation focused on mining and manufacturing",
-    ceo: "CEO_Alpha",
-    founded: "2024-01-15",
-  },
-  {
-    id: 2,
-    name: "Red Federation",
-    members: 89,
-    description: "PvP focused alliance, always ready for combat",
-    ceo: "WarLord_Prime",
-    founded: "2024-02-03",
-  },
-  {
-    id: 3,
-    name: "Trade Empire",
-    members: 156,
-    description: "Economic powerhouse controlling major trade routes",
-    ceo: "MegaTrader",
-    founded: "2024-01-08",
-  },
-]
+import { useSocialHub } from "@/hooks/use-social-hub"
 
 interface SocialHubProps {
   onBack: () => void
 }
 
 export function SocialHub({ onBack }: SocialHubProps) {
-  const [activeTab, setActiveTab] = useState<"chat" | "corporations" | "players">("chat")
-  const [chatMessage, setChatMessage] = useState("")
-  const [selectedChannel, setSelectedChannel] = useState<"global" | "local" | "corp">("global")
-
-  const filteredMessages = chatMessages.filter((msg) => msg.channel === selectedChannel)
+  const {
+    activeTab,
+    chatMessage,
+    selectedChannel,
+    filteredMessages,
+    onlinePlayers,
+    corporations,
+    setChatMessage,
+    sendMessage,
+    switchTab,
+    switchChannel,
+  } = useSocialHub()
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-black text-white p-6">
@@ -87,7 +45,7 @@ export function SocialHub({ onBack }: SocialHubProps) {
 
         <div className="flex gap-4 mb-6">
           <Button
-            onClick={() => setActiveTab("chat")}
+            onClick={() => switchTab("chat")}
             variant={activeTab === "chat" ? "default" : "outline"}
             className={
               activeTab === "chat"
@@ -99,7 +57,7 @@ export function SocialHub({ onBack }: SocialHubProps) {
             Chat
           </Button>
           <Button
-            onClick={() => setActiveTab("corporations")}
+            onClick={() => switchTab("corporations")}
             variant={activeTab === "corporations" ? "default" : "outline"}
             className={
               activeTab === "corporations"
@@ -111,7 +69,7 @@ export function SocialHub({ onBack }: SocialHubProps) {
             Corporations
           </Button>
           <Button
-            onClick={() => setActiveTab("players")}
+            onClick={() => switchTab("players")}
             variant={activeTab === "players" ? "default" : "outline"}
             className={
               activeTab === "players"
@@ -132,7 +90,7 @@ export function SocialHub({ onBack }: SocialHubProps) {
                   <div className="flex gap-2">
                     <Button
                       size="sm"
-                      onClick={() => setSelectedChannel("global")}
+                      onClick={() => switchChannel("global")}
                       variant={selectedChannel === "global" ? "default" : "outline"}
                       className={
                         selectedChannel === "global"
@@ -144,7 +102,7 @@ export function SocialHub({ onBack }: SocialHubProps) {
                     </Button>
                     <Button
                       size="sm"
-                      onClick={() => setSelectedChannel("local")}
+                      onClick={() => switchChannel("local")}
                       variant={selectedChannel === "local" ? "default" : "outline"}
                       className={
                         selectedChannel === "local"
@@ -156,7 +114,7 @@ export function SocialHub({ onBack }: SocialHubProps) {
                     </Button>
                     <Button
                       size="sm"
-                      onClick={() => setSelectedChannel("corp")}
+                      onClick={() => switchChannel("corp")}
                       variant={selectedChannel === "corp" ? "default" : "outline"}
                       className={
                         selectedChannel === "corp"
@@ -193,7 +151,10 @@ export function SocialHub({ onBack }: SocialHubProps) {
                       placeholder={`Type message in ${selectedChannel} chat...`}
                       className="flex-1 px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white placeholder-slate-400"
                     />
-                    <Button className="bg-amber-600 hover:bg-amber-700">
+                    <Button
+                      onClick={sendMessage}
+                      className="bg-amber-600 hover:bg-amber-700"
+                    >
                       <Send className="w-4 h-4" />
                     </Button>
                   </div>
