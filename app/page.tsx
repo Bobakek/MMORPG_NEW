@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -24,19 +25,31 @@ const Page = () => {
     navigateToTrading,
   } = useNavigation()
 
+  const stars = useMemo(
+    () =>
+      Array.from({ length: 300 }, (_, i) => ({
+        id: i,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        animationDelay: `${Math.random() * 3}s`,
+        animationDuration: `${2 + Math.random() * 2}s`,
+      })),
+    []
+  )
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-black relative">
       {/* Starfield background */}
       <div className="absolute inset-0">
-        {[...Array(300)].map((_, i) => (
+        {stars.map((star) => (
           <div
-            key={i}
+            key={star.id}
             className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              animationDuration: `${2 + Math.random() * 2}s`,
+              left: star.left,
+              top: star.top,
+              animationDelay: star.animationDelay,
+              animationDuration: star.animationDuration,
             }}
           />
         ))}
