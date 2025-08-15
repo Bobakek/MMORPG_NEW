@@ -55,7 +55,7 @@ export function StarMap({
             stroke={system.id === selectedSystem?.id ? "#fbbf24" : "transparent"}
             strokeWidth={3}
             className="cursor-pointer hover:opacity-80"
-            onClick={() => selectSystem(system)}
+            onClick={() => !traveling && selectSystem(system)}
           />
           <text
             x={system.x}
