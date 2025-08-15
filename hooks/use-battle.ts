@@ -192,6 +192,88 @@ export function useBattle() {
     setSelectedTarget(shipId)
   }
 
+  const performEnemyTurn = () => {
+    if (!playerShip) return
+
+    enemyShips.forEach((enemy) => {
+      const weapon = enemy.weapons[0]
+      if (!weapon || weapon.currentCooldown > 0) return
+
+      const distance = calculateDistance(enemy, playerShip)
+      const maxRange = 400
+
+      if (distance > maxRange) {
+        addBattleLog(`${enemy.name}'s ${weapon.name} out of range`, "miss")
+        setShips((prev) =>
+          prev.map((ship) => {
+            if (ship.id === enemy.id) {
+              const newWeapons = [...ship.weapons]
+              newWeapons[0] = { ...weapon, currentCooldown: weapon.cooldown }
+              return { ...ship, weapons: newWeapons }
+            }
+            return ship
+          }),
+        )
+        return
+      }
+
+      const hitChance = Math.random()
+      if (hitChance < 0.85) {
+        let damage = weapon.damage + Math.floor(Math.random() * 100) - 50
+
+        let newShield = playerShip.shield
+        let newHull = playerShip.hull
+
+        if (newShield > 0) {
+          if (damage >= newShield) {
+            damage -= newShield
+            newHull = Math.max(0, newHull - damage)
+            newShield = 0
+          } else {
+            newShield -= damage
+            damage = 0
+          }
+        } else {
+          newHull = Math.max(0, newHull - damage)
+        }
+
+        const playerDestroyed = newHull <= 0
+
+        setShips((prev) =>
+          prev.map((ship) => {
+            if (ship.id === enemy.id) {
+              const newWeapons = [...ship.weapons]
+              newWeapons[0] = { ...weapon, currentCooldown: weapon.cooldown }
+              return { ...ship, weapons: newWeapons }
+            }
+            if (ship.isPlayer) {
+              return { ...ship, shield: newShield, hull: newHull }
+            }
+            return ship
+          }),
+        )
+
+        if (playerDestroyed) {
+          addBattleLog(`${playerShip.name} destroyed!`, "destroy")
+        } else {
+          addBattleLog(`${enemy.name} hits ${playerShip.name} for ${weapon.damage} damage`, "damage")
+        }
+      } else {
+        addBattleLog(`${enemy.name}'s ${weapon.name} misses ${playerShip.name}`, "miss")
+        setShips((prev) =>
+          prev.map((ship) => {
+            if (ship.id === enemy.id) {
+              const newWeapons = [...ship.weapons]
+              newWeapons[0] = { ...weapon, currentCooldown: weapon.cooldown }
+              return { ...ship, weapons: newWeapons }
+            }
+            return ship
+          }),
+        )
+      }
+    })
+  }
+
   const getHealthPercentage = (current: number, max: number) => {
     return Math.max(0, (current / max) * 100)
   }
@@ -207,14 +289,11 @@ export function useBattle() {
     const interval = setInterval(() => {
       setShips((prev) =>
         prev.map((ship) => {
-          if (ship.isPlayer) {
-            const newWeapons = ship.weapons.map((weapon) => ({
-              ...weapon,
-              currentCooldown: Math.max(0, weapon.currentCooldown - 100),
-            }))
-            return { ...ship, weapons: newWeapons }
-          }
-          return ship
+          const newWeapons = ship.weapons.map((weapon) => ({
+            ...weapon,
+            currentCooldown: Math.max(0, weapon.currentCooldown - 100),
+          }))
+          return { ...ship, weapons: newWeapons }
         }),
       )
     }, 100)
@@ -231,6 +310,15 @@ export function useBattle() {
       return () => clearInterval(interval)
     }
   }, [isInCombat])
+
+  useEffect(() => {
+    if (isInCombat) {
+      const interval = setInterval(() => {
+        performEnemyTurn()
+      }, 1000)
+      return () => clearInterval(interval)
+    }
+  }, [isInCombat, enemyShips, playerShip])
 
   const startMission = (missionId: string) => {
     const mission = missions.find((m) => m.id === missionId)
