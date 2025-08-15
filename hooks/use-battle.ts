@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import type { BattleShip, BattleLog } from "@/types"
+import { usePlayer } from "./use-player"
 
 interface Mission {
   id: string
@@ -98,6 +99,8 @@ export function useBattle() {
   const [isInCombat, setIsInCombat] = useState(true)
   const [combatTimer, setCombatTimer] = useState(0)
 
+  const { addExperience } = usePlayer()
+
   const playerShip = ships.find((ship) => ship.isPlayer)
   const enemyShips = ships.filter((ship) => !ship.isPlayer && ship.hull > 0)
 
@@ -157,6 +160,7 @@ export function useBattle() {
 
             if (newHull <= 0) {
               addBattleLog(`${ship.name} destroyed!`, "destroy")
+              addExperience(100)
             } else {
               addBattleLog(`${weapon.name} hits ${ship.name} for ${weapon.damage} damage`, "damage")
             }
@@ -319,6 +323,14 @@ export function useBattle() {
       return () => clearInterval(interval)
     }
   }, [isInCombat, enemyShips, playerShip])
+
+  useEffect(() => {
+    if (isInCombat && enemyShips.length === 0) {
+      addBattleLog(`Mission ${currentMission.name} completed`, "info")
+      setIsInCombat(false)
+      addExperience(500)
+    }
+  }, [enemyShips, isInCombat, currentMission])
 
   const startMission = (missionId: string) => {
     const mission = missions.find((m) => m.id === missionId)

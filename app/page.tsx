@@ -13,6 +13,8 @@ import { SocialHub } from "@/components/social-hub"
 import { TradingHub } from "@/components/trading-hub"
 
 import { useNavigation } from "@/hooks/use-navigation"
+import { usePlayer } from "@/hooks/use-player"
+import { Progress } from "@/components/ui/progress"
 
 const Page = () => {
   const {
@@ -24,6 +26,8 @@ const Page = () => {
     navigateToSocial,
     navigateToTrading,
   } = useNavigation()
+  const { level, experience, nextLevelExp } = usePlayer()
+  const levelProgress = (experience / nextLevelExp) * 100
 
   const stars = useMemo(
     () =>
@@ -71,6 +75,13 @@ const Page = () => {
             <h1 className="text-2xl font-bold text-white">Galactic Command</h1>
           </div>
           <div className="flex items-center space-x-4">
+            <div className="flex flex-col items-end text-slate-300 text-sm">
+              <span>Level {level}</span>
+              <Progress value={levelProgress} className="w-24 h-1 mt-1" />
+              <span className="text-xs">
+                {experience}/{nextLevelExp} XP
+              </span>
+            </div>
             <Badge variant="outline" className="text-amber-600 border-amber-600">
               Explore and Manage
             </Badge>
