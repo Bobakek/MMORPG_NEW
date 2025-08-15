@@ -163,7 +163,7 @@ export function TradingHub({ onBack }: TradingHubProps) {
                         selectedItem?.id === item.id
                           ? "bg-amber-600/20 border border-amber-600/50"
                           : "bg-slate-800/50 hover:bg-slate-800/70"
-                      }`}
+                      } ${Math.abs(item.change) > 5 ? "ring-2 ring-rose-500 animate-pulse" : ""}`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -205,6 +205,17 @@ export function TradingHub({ onBack }: TradingHubProps) {
                             <div className="text-xs text-slate-400">Stock</div>
                           </div>
                         </div>
+                      </div>
+                      <div className="mt-2 flex gap-2 text-xs">
+                        {item.history.map((h, idx) => (
+                          <span
+                            key={idx}
+                            className={h > 0 ? "text-green-400" : "text-red-400"}
+                          >
+                            {h > 0 ? "+" : ""}
+                            {h}%
+                          </span>
+                        ))}
                       </div>
                     </div>
                   ))}
