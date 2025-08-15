@@ -1,6 +1,5 @@
 "use client"
 
-import { useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -12,18 +11,11 @@ import { FleetManagement } from "@/components/fleet-management"
 import { SocialHub } from "@/components/social-hub"
 import { TradingHub } from "@/components/trading-hub"
 
+import { Starfield } from "@/components/starfield"
+
 import { useNavigation } from "@/hooks/use-navigation"
 import { usePlayer } from "@/hooks/use-player"
 import { Progress } from "@/components/ui/progress"
-
-function mulberry32(a: number) {
-  return function () {
-    let t = (a += 0x6d2b79f5)
-    t = Math.imul(t ^ (t >>> 15), t | 1)
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
 
 const Page = () => {
   const {
@@ -38,34 +30,9 @@ const Page = () => {
   const { level, experience, nextLevelExp } = usePlayer()
   const levelProgress = (experience / nextLevelExp) * 100
 
-  const stars = useMemo(() => {
-    const rng = mulberry32(123456)
-    return Array.from({ length: 300 }, (_, i) => ({
-      id: i,
-      left: `${rng() * 100}%`,
-      top: `${rng() * 100}%`,
-      animationDelay: `${rng() * 3}s`,
-      animationDuration: `${2 + rng() * 2}s`,
-    }))
-  }, [])
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-black relative">
-      {/* Starfield background */}
-      <div className="absolute inset-0">
-        {stars.map((star) => (
-          <div
-            key={star.id}
-            className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
-            style={{
-              left: star.left,
-              top: star.top,
-              animationDelay: star.animationDelay,
-              animationDuration: star.animationDuration,
-            }}
-          />
-        ))}
-      </div>
+      <Starfield />
 
       {/* Header */}
       <header className="relative z-10 border-b border-slate-700 bg-slate-900/80 backdrop-blur-sm">

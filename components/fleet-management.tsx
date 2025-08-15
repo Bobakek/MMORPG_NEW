@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Rocket, Shield, Zap, Package } from "lucide-react"
 import { useFleetManagement } from "@/hooks/use-fleet-management"
+import { Starfield } from "@/components/starfield"
 
 interface FleetManagementProps {
   onBack: () => void
@@ -22,21 +23,7 @@ export function FleetManagement({ onBack }: FleetManagementProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-black relative">
-      {/* Starfield background */}
-      <div className="absolute inset-0">
-        {[...Array(300)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              animationDuration: `${2 + Math.random() * 2}s`,
-            }}
-          />
-        ))}
-      </div>
+      <Starfield />
 
       {/* Header */}
       <header className="relative z-10 border-b border-slate-700 bg-slate-900/80 backdrop-blur-sm">
