@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { StarMap } from "./star-map"
-import { SolarSystemView } from "./solar-system-view"
+import { SolarSystemView, type OrbitPlanet } from "./solar-system-view"
 import { MiningInterface } from "./mining-interface"
 import { ProcessingWindow } from "./processing-window"
 import { useGalaxyMap } from "@/hooks/use-galaxy-map"
@@ -13,6 +13,53 @@ import type { MiningTarget, ProcessingRecipe } from "@/types"
 interface GalaxyMapProps {
   onBack: () => void
 }
+
+const systemPlanets: OrbitPlanet[] = [
+  {
+    id: "mercury",
+    name: "Mercury",
+    position: [0, 0, 0],
+    size: 0.5,
+    color: "#b1b1b1",
+    distance: 8,
+    speed: 4.74,
+    inclination: 0.02,
+    rotationSpeed: 0.02,
+  },
+  {
+    id: "venus",
+    name: "Venus",
+    position: [0, 0, 0],
+    size: 0.9,
+    color: "#e5c555",
+    distance: 11,
+    speed: 3.5,
+    inclination: 0.01,
+    rotationSpeed: 0.015,
+  },
+  {
+    id: "earth",
+    name: "Earth",
+    position: [0, 0, 0],
+    size: 1,
+    color: "#2a6fdd",
+    distance: 14,
+    speed: 3,
+    inclination: 0.03,
+    rotationSpeed: 0.03,
+  },
+  {
+    id: "mars",
+    name: "Mars",
+    position: [0, 0, 0],
+    size: 0.8,
+    color: "#b55442",
+    distance: 17,
+    speed: 2.4,
+    inclination: 0.05,
+    rotationSpeed: 0.025,
+  },
+]
 
 export default function GalaxyMap({ onBack }: GalaxyMapProps) {
   const {
@@ -64,10 +111,12 @@ export default function GalaxyMap({ onBack }: GalaxyMapProps) {
     startProcessing(recipe)
   }
 
+  const handlePlanetSelect = (_planet: OrbitPlanet) => {}
+
   return (
     <div className="space-y-4">
       {selectedSystem?.id === playerLocation ? (
-        <SolarSystemView />
+        <SolarSystemView planets={systemPlanets} onPlanetSelect={handlePlanetSelect} />
       ) : (
         <StarMap
           starSystems={starSystems}
