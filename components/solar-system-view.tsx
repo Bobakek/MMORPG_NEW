@@ -1,9 +1,9 @@
 "use client"
 
 import { Canvas, useFrame, useThree /*, useLoader*/ } from "@react-three/fiber"
-import { OrbitControls } from "@react-three/drei"
 import { useRef, useEffect, useMemo } from "react"
 import * as THREE from "three"
+import SpaceControls from "./space-controls"
 // import { TextureLoader } from "three"
 import type { Planet } from "@/types/resources"
 
@@ -171,7 +171,7 @@ export function SolarSystemView() {
         <PlanetMesh key={p.id} {...p} />
       ))}
 
-      <OrbitControls />
+      <SpaceControls />
       <SceneCleanup />
     </Canvas>
   )
