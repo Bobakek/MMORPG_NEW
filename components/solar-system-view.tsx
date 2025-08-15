@@ -1,9 +1,10 @@
 "use client"
 
-import { Canvas, useFrame, useThree } from "@react-three/fiber"
+import { Canvas, useFrame, useThree, useLoader } from "@react-three/fiber"
 import { OrbitControls } from "@react-three/drei"
 import { useRef, useEffect, useMemo } from "react"
 import * as THREE from "three"
+import { TextureLoader } from "three"
 
 interface PlanetProps {
   distance: number
@@ -45,6 +46,7 @@ function SceneCleanup() {
 }
 
 export function SolarSystemView() {
+
   const starPositions = useMemo(() => {
     const count = 1000
     const positions = new Float32Array(count * 3)
@@ -93,4 +95,3 @@ export function SolarSystemView() {
 }
 
 export default SolarSystemView
-
