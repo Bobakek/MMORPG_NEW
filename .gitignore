@@ -10,6 +10,11 @@
 # production
 /build
 
+*.jpg
+*.jpeg
+*.png
+*.pdf
+
 # debug
 npm-debug.log*
 yarn-debug.log*
