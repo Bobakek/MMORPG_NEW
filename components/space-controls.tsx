@@ -58,21 +58,25 @@ export function SpaceControls() {
 
   useEffect(() => {
     if (!supported) return
+    const dom = gl.domElement
     const handleClick = () => {
-      try {
-        controlsRef.current?.lock()
-      } catch (err) {
-        console.error("Pointer lock failed", err)
+      if (!document.pointerLockElement) {
+        try {
+          controlsRef.current?.lock()
+        } catch (err) {
+          console.error("Pointer lock failed", err)
+        }
       }
     }
     const handlePointerLockError = (err: Event) => {
       console.error("Pointer lock error", err)
+      dom.addEventListener("click", handleClick, { once: true })
     }
     const handleUnlock = () => {
       console.info("Pointer lock released")
+      dom.addEventListener("click", handleClick, { once: true })
     }
-    const dom = gl.domElement
-    dom.addEventListener("click", handleClick)
+    dom.addEventListener("click", handleClick, { once: true })
     dom.addEventListener("pointerlockerror", handlePointerLockError)
     controlsRef.current?.addEventListener("unlock", handleUnlock)
     return () => {
