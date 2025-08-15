@@ -1,33 +1,54 @@
 "use client"
 
-import { Canvas, useFrame, useThree, useLoader } from "@react-three/fiber"
+import { Canvas, useFrame, useThree /*, useLoader*/ } from "@react-three/fiber"
 import { OrbitControls } from "@react-three/drei"
 import { useRef, useEffect, useMemo } from "react"
 import * as THREE from "three"
-import { TextureLoader } from "three"
+// import { TextureLoader } from "three"
+import type { Planet } from "@/types/resources"
 
-interface PlanetProps {
+interface OrbitPlanet extends Planet {
   distance: number
-  size: number
   speed: number
-  color: string
+  texture?: string
+  inclination: number
+  rotationSpeed: number
 }
 
-function Planet({ distance, size, speed, color }: PlanetProps) {
+function PlanetMesh({
+  distance,
+  size,
+  speed,
+  inclination,
+  rotationSpeed,
+  color,
+  // texture,
+}: OrbitPlanet) {
   const ref = useRef<THREE.Mesh>(null!)
+  // const colorMap = useLoader(TextureLoader, texture)
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime() * speed
-    ref.current.position.set(Math.cos(t) * distance, 0, Math.sin(t) * distance)
+    const position = new THREE.Vector3(
+      Math.cos(t) * distance,
+      0,
+      Math.sin(t) * distance,
+    )
+    position.applyAxisAngle(new THREE.Vector3(1, 0, 0), inclination)
+    ref.current.position.copy(position)
+    ref.current.rotation.y += rotationSpeed
   })
 
   return (
     <>
       <mesh ref={ref}>
         <sphereGeometry args={[size, 32, 32]} />
-        <meshStandardMaterial color={color} />
+        <meshStandardMaterial
+          color={color}
+          /* map={colorMap} */
+        />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh rotation={[-Math.PI / 2 + inclination, 0, 0]}>
         <ringGeometry args={[distance - 0.05, distance + 0.05, 64]} />
         <meshBasicMaterial color="gray" side={THREE.DoubleSide} />
       </mesh>
@@ -46,7 +67,6 @@ function SceneCleanup() {
 }
 
 export function SolarSystemView() {
-
   const starPositions = useMemo(() => {
     const count = 1000
     const positions = new Float32Array(count * 3)
@@ -58,8 +78,64 @@ export function SolarSystemView() {
     return positions
   }, [])
 
+  // const sunTexture = useLoader(TextureLoader, "/textures/sun.jpg")
+
+  const planets: OrbitPlanet[] = [
+    {
+      id: "mercury",
+      name: "Mercury",
+      position: [0, 0, 0],
+      size: 0.5,
+      color: "#b1b1b1",
+      // texture: "/textures/mercury.jpg",
+      distance: 8,
+      speed: 4.74,
+      inclination: 0.02,
+      rotationSpeed: 0.02,
+    },
+    {
+      id: "venus",
+      name: "Venus",
+      position: [0, 0, 0],
+      size: 0.9,
+      color: "#e5c555",
+      // texture: "/textures/venus.jpg",
+      distance: 11,
+      speed: 3.5,
+      inclination: 0.01,
+      rotationSpeed: 0.015,
+    },
+    {
+      id: "earth",
+      name: "Earth",
+      position: [0, 0, 0],
+      size: 1,
+      color: "#2a6fdd",
+      // texture: "/textures/earth.jpg",
+      distance: 14,
+      speed: 3,
+      inclination: 0.03,
+      rotationSpeed: 0.03,
+    },
+    {
+      id: "mars",
+      name: "Mars",
+      position: [0, 0, 0],
+      size: 0.8,
+      color: "#b55442",
+      // texture: "/textures/mars.jpg",
+      distance: 17,
+      speed: 2.4,
+      inclination: 0.05,
+      rotationSpeed: 0.025,
+    },
+  ]
+
   return (
-    <Canvas style={{ width: 800, height: 600 }} camera={{ position: [0, 20, 40], fov: 60 }}>
+    <Canvas
+      style={{ width: 800, height: 600 }}
+      camera={{ position: [0, 20, 40], fov: 60 }}
+    >
       <ambientLight intensity={0.5} />
       <pointLight position={[0, 0, 0]} intensity={2} />
 
@@ -81,12 +157,19 @@ export function SolarSystemView() {
       </points>
 
       <mesh>
-        <sphereGeometry args={[2, 32, 32]} />
-        <meshStandardMaterial emissive="yellow" />
+        <sphereGeometry args={[7, 32, 32]} />
+        <meshStandardMaterial
+          color="yellow"
+          emissive="yellow"
+          emissiveIntensity={1.5}
+          /* map={sunTexture} */
+          /* emissiveMap={sunTexture} */
+        />
       </mesh>
 
-      <Planet distance={6} size={0.5} speed={1} color="blue" />
-      <Planet distance={10} size={0.8} speed={0.6} color="red" />
+      {planets.map((p) => (
+        <PlanetMesh key={p.id} {...p} />
+      ))}
 
       <OrbitControls />
       <SceneCleanup />
