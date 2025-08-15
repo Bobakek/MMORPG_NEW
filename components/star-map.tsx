@@ -5,9 +5,9 @@ import type { StarSystem } from "@/types"
 interface StarMapProps {
   starSystems: StarSystem[]
   playerLocation: string
-  destination: string | null
   selectedSystem: StarSystem | null
   traveling: boolean
+  travelPath: string[]
   selectSystem: (system: StarSystem) => void
   getSecurityColor: (sec: StarSystem["security"]) => string
 }
@@ -15,9 +15,9 @@ interface StarMapProps {
 export function StarMap({
   starSystems,
   playerLocation,
-  destination,
   selectedSystem,
   traveling,
+  travelPath,
   selectSystem,
   getSecurityColor,
 }: StarMapProps) {
@@ -68,18 +68,26 @@ export function StarMap({
         </g>
       ))}
 
-      {traveling && destination && selectedSystem && (
-        <line
-          x1={starSystems.find((s) => s.id === playerLocation)?.x || 0}
-          y1={starSystems.find((s) => s.id === playerLocation)?.y || 0}
-          x2={starSystems.find((s) => s.id === destination)?.x || 0}
-          y2={starSystems.find((s) => s.id === destination)?.y || 0}
-          stroke="#10b981"
-          strokeWidth={3}
-          strokeDasharray="5,5"
-          opacity={0.8}
-        />
-      )}
+      {traveling && travelPath.length > 1 &&
+        travelPath.map((id, i) => {
+          if (i === travelPath.length - 1) return null
+          const from = starSystems.find((s) => s.id === id)
+          const to = starSystems.find((s) => s.id === travelPath[i + 1])
+          if (!from || !to) return null
+          return (
+            <line
+              key={`${from.id}-${to.id}`}
+              x1={from.x}
+              y1={from.y}
+              x2={to.x}
+              y2={to.y}
+              stroke="#10b981"
+              strokeWidth={3}
+              strokeDasharray="5,5"
+              opacity={0.8}
+            />
+          )
+        })}
     </svg>
   )
 }
