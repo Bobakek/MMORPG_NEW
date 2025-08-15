@@ -75,9 +75,9 @@ export default function GalaxyMap({ onBack }: GalaxyMapProps) {
     starSystems,
     selectedSystem,
     playerLocation,
-    destination,
     traveling,
     travelProgress,
+    travelPath,
     selectSystem,
     initiateTravel,
     getSecurityColor,
@@ -130,9 +130,9 @@ export default function GalaxyMap({ onBack }: GalaxyMapProps) {
         <StarMap
           starSystems={starSystems}
           playerLocation={playerLocation}
-          destination={destination}
           selectedSystem={selectedSystem}
           traveling={traveling}
+          travelPath={travelPath}
           selectSystem={selectSystem}
           getSecurityColor={getSecurityColor}
         />
