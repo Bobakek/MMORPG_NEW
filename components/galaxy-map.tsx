@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { Progress } from "@/components/ui/progress"
 import { StarMap } from "./star-map"
 import { MiningInterface } from "./mining-interface"
 import { ProcessingWindow } from "./processing-window"
@@ -13,8 +14,17 @@ interface GalaxyMapProps {
 }
 
 export default function GalaxyMap({ onBack }: GalaxyMapProps) {
-  const { starSystems, selectedSystem, playerLocation, selectSystem, getSecurityColor } =
-    useGalaxyMap()
+  const {
+    starSystems,
+    selectedSystem,
+    playerLocation,
+    destination,
+    traveling,
+    travelProgress,
+    selectSystem,
+    initiateTravel,
+    getSecurityColor,
+  } = useGalaxyMap()
   const {
     miningState,
     minedResources,
@@ -58,19 +68,37 @@ export default function GalaxyMap({ onBack }: GalaxyMapProps) {
       <StarMap
         starSystems={starSystems}
         playerLocation={playerLocation}
-        destination={null}
+        destination={destination}
         selectedSystem={selectedSystem}
-        traveling={false}
+        traveling={traveling}
         selectSystem={selectSystem}
         getSecurityColor={getSecurityColor}
       />
 
+      {traveling && (
+        <div className="space-y-2">
+          <Progress value={travelProgress} />
+        </div>
+      )}
+
       <div className="flex gap-4">
         <Button onClick={onBack}>Back</Button>
-        <Button onClick={handleStartMining} disabled={!selectedSystem || miningState.isActive}>
+        <Button
+          onClick={() => selectedSystem && initiateTravel(selectedSystem)}
+          disabled={!selectedSystem || traveling}
+        >
+          Travel
+        </Button>
+        <Button
+          onClick={handleStartMining}
+          disabled={!selectedSystem || miningState.isActive || traveling}
+        >
           Start Mining
         </Button>
-        <Button onClick={handleStartProcessing} disabled={processingState.isActive}>
+        <Button
+          onClick={handleStartProcessing}
+          disabled={processingState.isActive || traveling}
+        >
           Start Processing
         </Button>
       </div>
