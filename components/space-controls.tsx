@@ -2,13 +2,14 @@
 
 import { useThree, useFrame } from "@react-three/fiber"
 import { PointerLockControls } from "@react-three/drei"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import * as THREE from "three"
 
 export function SpaceControls() {
   const { camera, gl } = useThree()
   const controlsRef = useRef<any>(null)
   const move = useRef({ forward: false, backward: false, left: false, right: false })
+  const [supported, setSupported] = useState(false)
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -52,11 +53,16 @@ export function SpaceControls() {
   }, [])
 
   useEffect(() => {
+    setSupported(typeof document !== "undefined" && "pointerLockElement" in document)
+  }, [])
+
+  useEffect(() => {
+    if (!supported) return
     const handleClick = () => controlsRef.current?.lock()
     const dom = gl.domElement
     dom.addEventListener("click", handleClick)
     return () => dom.removeEventListener("click", handleClick)
-  }, [gl])
+  }, [gl, supported])
 
   useFrame((_, delta) => {
     const speed = 10 * delta
@@ -74,6 +80,7 @@ export function SpaceControls() {
     if (move.current.right) camera.position.addScaledVector(right, -speed)
   })
 
+  if (!supported) return null
   return <PointerLockControls ref={controlsRef} />
 }
 
