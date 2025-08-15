@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useReducer } from "react"
 import type { BattleShip, BattleLog } from "@/types"
 import { usePlayer } from "./use-player"
 
@@ -91,143 +91,188 @@ const missions: Mission[] = [
 
 export function useBattle() {
   const [currentMission, setCurrentMission] = useState<Mission>(missions[0])
-  const [ships, setShips] = useState<BattleShip[]>([playerTemplate, ...missions[0].enemies])
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null)
-  const [battleLog, setBattleLog] = useState<BattleLog[]>([
-    { id: "1", timestamp: Date.now(), message: "Mission initialized.", type: "info" },
-  ])
   const [isInCombat, setIsInCombat] = useState(true)
-  const [combatTimer, setCombatTimer] = useState(0)
 
   const { addExperience } = usePlayer()
 
-  const playerShip = ships.find((ship) => ship.isPlayer)
-  const enemyShips = ships.filter((ship) => !ship.isPlayer && ship.hull > 0)
-
-  const addBattleLog = (message: string, type: BattleLog["type"]) => {
-    const newLog: BattleLog = {
-      id: Date.now().toString(),
-      timestamp: Date.now(),
-      message,
-      type,
-    }
-    setBattleLog((prev) => [newLog, ...prev.slice(0, 9)])
-  }
+  const createLog = (message: string, type: BattleLog["type"]): BattleLog => ({
+    id: Date.now().toString(),
+    timestamp: Date.now(),
+    message,
+    type,
+  })
 
   const calculateDistance = (ship1: BattleShip, ship2: BattleShip) => {
     return Math.sqrt(Math.pow(ship2.x - ship1.x, 2) + Math.pow(ship2.y - ship1.y, 2))
   }
 
-  const handleAttack = (weaponIndex: number) => {
-    if (!playerShip || !selectedTarget) return
+  interface BattleState {
+    ships: BattleShip[]
+    battleLog: BattleLog[]
+    combatTimer: number // milliseconds
+    enemyTurnTimer: number
+  }
 
-    const target = ships.find((ship) => ship.id === selectedTarget)
-    if (!target || target.hull <= 0) return
+  type BattleAction =
+    | { type: "SET_MISSION"; ships: BattleShip[]; message: string }
+    | { type: "ADD_LOG"; log: BattleLog }
+    | { type: "SELECT_TARGET"; shipId: string }
+    | { type: "PLAYER_ATTACK"; weaponIndex: number; targetId: string; addExperience: (exp: number) => void }
+    | { type: "TICK"; delta: number }
 
-    const weapon = playerShip.weapons[weaponIndex]
-    if (weapon.currentCooldown > 0) return
+  const initialState: BattleState = {
+    ships: [playerTemplate, ...missions[0].enemies],
+    battleLog: [createLog("Mission initialized.", "info")],
+    combatTimer: 0,
+    enemyTurnTimer: 0,
+  }
 
-    const distance = calculateDistance(playerShip, target)
-    const maxRange = 400
-
-    if (distance > maxRange) {
-      addBattleLog(`Target out of range for ${weapon.name}`, "miss")
-      return
-    }
-
-    const hitChance = Math.random()
-    if (hitChance < 0.85) {
-      let damage = weapon.damage + Math.floor(Math.random() * 100) - 50
-
-      setShips((prev) =>
-        prev.map((ship) => {
-          if (ship.id === selectedTarget) {
-            let newShield = ship.shield
-            let newHull = ship.hull
-
-            if (newShield > 0) {
-              if (damage >= newShield) {
-                damage -= newShield
-                newHull = Math.max(0, newHull - damage)
-                newShield = 0
-              } else {
-                newShield -= damage
-                damage = 0
-              }
-            } else {
+  const battleReducer = (state: BattleState, action: BattleAction): BattleState => {
+    switch (action.type) {
+      case "SET_MISSION":
+        return {
+          ships: action.ships,
+          battleLog: [createLog(action.message, "info")],
+          combatTimer: 0,
+          enemyTurnTimer: 0,
+        }
+      case "ADD_LOG":
+        return {
+          ...state,
+          battleLog: [action.log, ...state.battleLog.slice(0, 9)],
+        }
+      case "SELECT_TARGET":
+        return {
+          ...state,
+          ships: state.ships.map((ship) => ({
+            ...ship,
+            isTargeted: ship.id === action.shipId && !ship.isPlayer,
+          })),
+        }
+      case "PLAYER_ATTACK": {
+        const { weaponIndex, targetId, addExperience } = action
+        const ships = state.ships.map((s) => ({
+          ...s,
+          weapons: s.weapons.map((w) => ({ ...w })),
+        }))
+        const player = ships.find((s) => s.isPlayer)
+        const target = ships.find((s) => s.id === targetId)
+        if (!player || !target || target.hull <= 0) return state
+        const weapon = player.weapons[weaponIndex]
+        if (!weapon || weapon.currentCooldown > 0) return state
+        const distance = calculateDistance(player, target)
+        const maxRange = 400
+        if (distance > maxRange) {
+          return {
+            ...state,
+            battleLog: [
+              createLog(`Target out of range for ${weapon.name}`, "miss"),
+              ...state.battleLog.slice(0, 9),
+            ],
+          }
+        }
+        const hitChance = Math.random()
+        if (hitChance < 0.85) {
+          let damage = weapon.damage + Math.floor(Math.random() * 100) - 50
+          let newShield = target.shield
+          let newHull = target.hull
+          if (newShield > 0) {
+            if (damage >= newShield) {
+              damage -= newShield
               newHull = Math.max(0, newHull - damage)
-            }
-
-            if (newHull <= 0) {
-              addBattleLog(`${ship.name} destroyed!`, "destroy")
-              addExperience(100)
+              newShield = 0
             } else {
-              addBattleLog(`${weapon.name} hits ${ship.name} for ${weapon.damage} damage`, "damage")
+              newShield -= damage
+              damage = 0
             }
-
-            return { ...ship, shield: newShield, hull: newHull }
+          } else {
+            newHull = Math.max(0, newHull - damage)
           }
-          return ship
-        }),
-      )
-
-      setShips((prev) =>
-        prev.map((ship) => {
-          if (ship.isPlayer) {
-            const newWeapons = [...ship.weapons]
-            newWeapons[weaponIndex] = { ...weapon, currentCooldown: weapon.cooldown }
-            return { ...ship, weapons: newWeapons }
+          const targetDestroyed = newHull <= 0
+          player.weapons[weaponIndex].currentCooldown = weapon.cooldown
+          const updatedShips = ships.map((s) => {
+            if (s.id === targetId) return { ...s, shield: newShield, hull: newHull }
+            if (s.isPlayer) return player
+            return s
+          })
+          const log = targetDestroyed
+            ? createLog(`${target.name} destroyed!`, "destroy")
+            : createLog(`${weapon.name} hits ${target.name} for ${weapon.damage} damage`, "damage")
+          if (targetDestroyed) addExperience(100)
+          return {
+            ...state,
+            ships: updatedShips,
+            battleLog: [log, ...state.battleLog.slice(0, 9)],
           }
-          return ship
-        }),
-      )
-    } else {
-      addBattleLog(`${weapon.name} misses ${target.name}`, "miss")
+        }
+        player.weapons[weaponIndex].currentCooldown = weapon.cooldown
+        return {
+          ...state,
+          ships,
+          battleLog: [
+            createLog(`${weapon.name} misses ${target.name}`, "miss"),
+            ...state.battleLog.slice(0, 9),
+          ],
+        }
+      }
+      case "TICK": {
+        const delta = action.delta
+        let ships = state.ships.map((s) => ({
+          ...s,
+          weapons: s.weapons.map((w) => ({
+            ...w,
+            currentCooldown: Math.max(0, w.currentCooldown - delta),
+          })),
+        }))
+        let enemyTurnTimer = state.enemyTurnTimer + delta
+        let battleLog = state.battleLog
+        while (enemyTurnTimer >= 1000) {
+          const result = performEnemyTurn(ships)
+          ships = result.ships
+          if (result.logs.length > 0) {
+            battleLog = [...result.logs, ...battleLog].slice(0, 10)
+          }
+          enemyTurnTimer -= 1000
+        }
+        return {
+          ships,
+          battleLog,
+          combatTimer: state.combatTimer + delta,
+          enemyTurnTimer,
+        }
+      }
+      default:
+        return state
     }
   }
 
-  const handleTargetSelect = (shipId: string) => {
-    setShips((prev) =>
-      prev.map((ship) => ({
-        ...ship,
-        isTargeted: ship.id === shipId && !ship.isPlayer,
-      })),
-    )
-    setSelectedTarget(shipId)
-  }
+  const performEnemyTurn = (ships: BattleShip[]) => {
+    const logs: BattleLog[] = []
+    const updatedShips = ships.map((s) => ({
+      ...s,
+      weapons: s.weapons.map((w) => ({ ...w })),
+    }))
+    const playerIndex = updatedShips.findIndex((s) => s.isPlayer)
+    const player = updatedShips[playerIndex]
+    if (!player) return { ships: updatedShips, logs }
 
-  const performEnemyTurn = () => {
-    if (!playerShip) return
-
-    enemyShips.forEach((enemy) => {
+    updatedShips.forEach((enemy, index) => {
+      if (enemy.isPlayer || enemy.hull <= 0) return
       const weapon = enemy.weapons[0]
       if (!weapon || weapon.currentCooldown > 0) return
-
-      const distance = calculateDistance(enemy, playerShip)
+      const distance = calculateDistance(enemy, player)
       const maxRange = 400
-
+      enemy.weapons[0].currentCooldown = weapon.cooldown
       if (distance > maxRange) {
-        addBattleLog(`${enemy.name}'s ${weapon.name} out of range`, "miss")
-        setShips((prev) =>
-          prev.map((ship) => {
-            if (ship.id === enemy.id) {
-              const newWeapons = [...ship.weapons]
-              newWeapons[0] = { ...weapon, currentCooldown: weapon.cooldown }
-              return { ...ship, weapons: newWeapons }
-            }
-            return ship
-          }),
-        )
+        logs.push(createLog(`${enemy.name}'s ${weapon.name} out of range`, "miss"))
         return
       }
-
       const hitChance = Math.random()
       if (hitChance < 0.85) {
         let damage = weapon.damage + Math.floor(Math.random() * 100) - 50
-
-        let newShield = playerShip.shield
-        let newHull = playerShip.hull
-
+        let newShield = player.shield
+        let newHull = player.hull
         if (newShield > 0) {
           if (damage >= newShield) {
             damage -= newShield
@@ -240,109 +285,83 @@ export function useBattle() {
         } else {
           newHull = Math.max(0, newHull - damage)
         }
-
-        const playerDestroyed = newHull <= 0
-
-        setShips((prev) =>
-          prev.map((ship) => {
-            if (ship.id === enemy.id) {
-              const newWeapons = [...ship.weapons]
-              newWeapons[0] = { ...weapon, currentCooldown: weapon.cooldown }
-              return { ...ship, weapons: newWeapons }
-            }
-            if (ship.isPlayer) {
-              return { ...ship, shield: newShield, hull: newHull }
-            }
-            return ship
-          }),
+        updatedShips[playerIndex] = { ...player, shield: newShield, hull: newHull }
+        logs.push(
+          newHull <= 0
+            ? createLog(`${player.name} destroyed!`, "destroy")
+            : createLog(`${enemy.name} hits ${player.name} for ${weapon.damage} damage`, "damage"),
         )
-
-        if (playerDestroyed) {
-          addBattleLog(`${playerShip.name} destroyed!`, "destroy")
-        } else {
-          addBattleLog(`${enemy.name} hits ${playerShip.name} for ${weapon.damage} damage`, "damage")
-        }
       } else {
-        addBattleLog(`${enemy.name}'s ${weapon.name} misses ${playerShip.name}`, "miss")
-        setShips((prev) =>
-          prev.map((ship) => {
-            if (ship.id === enemy.id) {
-              const newWeapons = [...ship.weapons]
-              newWeapons[0] = { ...weapon, currentCooldown: weapon.cooldown }
-              return { ...ship, weapons: newWeapons }
-            }
-            return ship
-          }),
-        )
+        logs.push(createLog(`${enemy.name}'s ${weapon.name} misses ${player.name}`, "miss"))
       }
     })
+
+    return { ships: updatedShips, logs }
+  }
+
+  const [state, dispatch] = useReducer(battleReducer, initialState)
+
+  const ships = state.ships
+  const battleLog = state.battleLog
+  const combatTimer = state.combatTimer
+
+  const playerShip = ships.find((ship) => ship.isPlayer)
+  const enemyShips = ships.filter((ship) => !ship.isPlayer && ship.hull > 0)
+
+  const handleAttack = (weaponIndex: number) => {
+    if (!selectedTarget) return
+    dispatch({ type: "PLAYER_ATTACK", weaponIndex, targetId: selectedTarget, addExperience })
+  }
+
+  const handleTargetSelect = (shipId: string) => {
+    dispatch({ type: "SELECT_TARGET", shipId })
+    setSelectedTarget(shipId)
+  }
+
+  useEffect(() => {
+    if (!isInCombat) return
+    let frameId: number
+    let last = performance.now()
+    const loop = (time: number) => {
+      const delta = time - last
+      last = time
+      dispatch({ type: "TICK", delta })
+      frameId = requestAnimationFrame(loop)
+    }
+    frameId = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(frameId)
+  }, [isInCombat])
+
+  useEffect(() => {
+    if (isInCombat && enemyShips.length === 0) {
+      dispatch({ type: "ADD_LOG", log: createLog(`Mission ${currentMission.name} completed`, "info") })
+      setIsInCombat(false)
+      addExperience(500)
+    }
+  }, [enemyShips, isInCombat, currentMission, addExperience])
+
+  const startMission = (missionId: string) => {
+    const mission = missions.find((m) => m.id === missionId)
+    if (!mission) return
+    dispatch({
+      type: "SET_MISSION",
+      ships: [playerTemplate, ...mission.enemies],
+      message: `Mission ${mission.name} started`,
+    })
+    setSelectedTarget(null)
+    setCurrentMission(mission)
+    setIsInCombat(true)
   }
 
   const getHealthPercentage = (current: number, max: number) => {
     return Math.max(0, (current / max) * 100)
   }
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
+  const formatTime = (ms: number) => {
+    const totalSeconds = Math.floor(ms / 1000)
+    const mins = Math.floor(totalSeconds / 60)
+    const secs = totalSeconds % 60
     return `${mins}:${secs.toString().padStart(2, "0")}`
-  }
-
-  // Weapon cooldown timer
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setShips((prev) =>
-        prev.map((ship) => {
-          const newWeapons = ship.weapons.map((weapon) => ({
-            ...weapon,
-            currentCooldown: Math.max(0, weapon.currentCooldown - 100),
-          }))
-          return { ...ship, weapons: newWeapons }
-        }),
-      )
-    }, 100)
-
-    return () => clearInterval(interval)
-  }, [])
-
-  // Combat timer
-  useEffect(() => {
-    if (isInCombat) {
-      const interval = setInterval(() => {
-        setCombatTimer((prev) => prev + 1)
-      }, 1000)
-      return () => clearInterval(interval)
-    }
-  }, [isInCombat])
-
-  useEffect(() => {
-    if (isInCombat) {
-      const interval = setInterval(() => {
-        performEnemyTurn()
-      }, 1000)
-      return () => clearInterval(interval)
-    }
-  }, [isInCombat, enemyShips, playerShip])
-
-  useEffect(() => {
-    if (isInCombat && enemyShips.length === 0) {
-      addBattleLog(`Mission ${currentMission.name} completed`, "info")
-      setIsInCombat(false)
-      addExperience(500)
-    }
-  }, [enemyShips, isInCombat, currentMission])
-
-  const startMission = (missionId: string) => {
-    const mission = missions.find((m) => m.id === missionId)
-    if (!mission) return
-    setShips([playerTemplate, ...mission.enemies])
-    setSelectedTarget(null)
-    setBattleLog([
-      { id: Date.now().toString(), timestamp: Date.now(), message: `Mission ${mission.name} started`, type: "info" },
-    ])
-    setCurrentMission(mission)
-    setIsInCombat(true)
-    setCombatTimer(0)
   }
 
   return {
