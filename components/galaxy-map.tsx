@@ -2,13 +2,22 @@
 
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import dynamic from "next/dynamic"
 import { StarMap } from "./star-map"
-import { SolarSystemView, type OrbitPlanet } from "./solar-system-view"
+import type { OrbitPlanet } from "./solar-system-view"
 import { MiningInterface } from "./mining-interface"
 import { ProcessingWindow } from "./processing-window"
 import { useGalaxyMap } from "@/hooks/use-galaxy-map"
 import { useResourceOperations } from "@/hooks/use-resource-operations"
 import type { MiningTarget, ProcessingRecipe } from "@/types"
+
+const SolarSystemView = dynamic(
+  () => import("./solar-system-view").then((m) => m.SolarSystemView),
+  {
+    ssr: false,
+    loading: () => <div>Loading 3D view...</div>,
+  }
+)
 
 interface GalaxyMapProps {
   onBack: () => void
