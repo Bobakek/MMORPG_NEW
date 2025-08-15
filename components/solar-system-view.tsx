@@ -46,7 +46,7 @@ function SceneCleanup() {
 }
 
 export function SolarSystemView() {
-  const starTexture = useLoader(TextureLoader, "/textures/starfield.png")
+
   const starPositions = useMemo(() => {
     const count = 1000
     const positions = new Float32Array(count * 3)
@@ -65,7 +65,7 @@ export function SolarSystemView() {
 
       <mesh>
         <sphereGeometry args={[500, 64, 64]} />
-        <meshBasicMaterial map={starTexture} side={THREE.BackSide} />
+        <meshBasicMaterial color="black" side={THREE.BackSide} />
       </mesh>
 
       <points>
