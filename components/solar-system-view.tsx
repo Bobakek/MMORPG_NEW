@@ -1,13 +1,14 @@
 "use client"
 
-import { Canvas, useFrame, useThree /*, useLoader*/ } from "@react-three/fiber"
-import { useRef, useEffect, useMemo } from "react"
+import { Canvas, useFrame, useThree } from "@react-three/fiber"
+import { useRef, useEffect, useMemo, useState } from "react"
 import * as THREE from "three"
 import SpaceControls from "./space-controls"
 // import { TextureLoader } from "three"
 import type { Planet } from "@/types/resources"
+import { PlanetList } from "./ui/planet-list"
 
-interface OrbitPlanet extends Planet {
+export interface OrbitPlanet extends Planet {
   distance: number
   speed: number
   texture?: string
@@ -23,7 +24,8 @@ function PlanetMesh({
   rotationSpeed,
   color,
   // texture,
-}: OrbitPlanet) {
+  onPositionChange,
+}: OrbitPlanet & { onPositionChange: (pos: THREE.Vector3) => void }) {
   const ref = useRef<THREE.Mesh>(null!)
   // const colorMap = useLoader(TextureLoader, texture)
 
@@ -37,6 +39,7 @@ function PlanetMesh({
     position.applyAxisAngle(new THREE.Vector3(1, 0, 0), inclination)
     ref.current.position.copy(position)
     ref.current.rotation.y += rotationSpeed
+    onPositionChange(position)
   })
 
   return (
@@ -56,6 +59,25 @@ function PlanetMesh({
   )
 }
 
+function CameraController({
+  target,
+  planetPositions,
+}: {
+  target: OrbitPlanet | null
+  planetPositions: React.MutableRefObject<Record<string, THREE.Vector3>>
+}) {
+  const { camera } = useThree()
+  useEffect(() => {
+    if (!target) return
+    const pos = planetPositions.current[target.id]
+    if (!pos) return
+    const offset = target.size * 5
+    camera.position.set(pos.x + offset, pos.y + offset, pos.z + offset)
+    camera.lookAt(pos)
+  }, [target, planetPositions, camera])
+  return null
+}
+
 function SceneCleanup() {
   const { gl } = useThree()
   useEffect(() => {
@@ -66,7 +88,12 @@ function SceneCleanup() {
   return null
 }
 
-export function SolarSystemView() {
+interface SolarSystemViewProps {
+  planets: OrbitPlanet[]
+  onPlanetSelect?: (planet: OrbitPlanet) => void
+}
+
+export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProps) {
   const starPositions = useMemo(() => {
     const count = 1000
     const positions = new Float32Array(count * 3)
@@ -80,100 +107,67 @@ export function SolarSystemView() {
 
   // const sunTexture = useLoader(TextureLoader, "/textures/sun.jpg")
 
-  const planets: OrbitPlanet[] = [
-    {
-      id: "mercury",
-      name: "Mercury",
-      position: [0, 0, 0],
-      size: 0.5,
-      color: "#b1b1b1",
-      // texture: "/textures/mercury.jpg",
-      distance: 8,
-      speed: 4.74,
-      inclination: 0.02,
-      rotationSpeed: 0.02,
-    },
-    {
-      id: "venus",
-      name: "Venus",
-      position: [0, 0, 0],
-      size: 0.9,
-      color: "#e5c555",
-      // texture: "/textures/venus.jpg",
-      distance: 11,
-      speed: 3.5,
-      inclination: 0.01,
-      rotationSpeed: 0.015,
-    },
-    {
-      id: "earth",
-      name: "Earth",
-      position: [0, 0, 0],
-      size: 1,
-      color: "#2a6fdd",
-      // texture: "/textures/earth.jpg",
-      distance: 14,
-      speed: 3,
-      inclination: 0.03,
-      rotationSpeed: 0.03,
-    },
-    {
-      id: "mars",
-      name: "Mars",
-      position: [0, 0, 0],
-      size: 0.8,
-      color: "#b55442",
-      // texture: "/textures/mars.jpg",
-      distance: 17,
-      speed: 2.4,
-      inclination: 0.05,
-      rotationSpeed: 0.025,
-    },
-  ]
+  const planetPositions = useRef<Record<string, THREE.Vector3>>({})
+  const [selectedPlanet, setSelectedPlanet] = useState<OrbitPlanet | null>(null)
 
   return (
-    <Canvas
-      style={{ width: 800, height: 600 }}
-      camera={{ position: [0, 20, 40], fov: 60 }}
-    >
-      <ambientLight intensity={0.5} />
-      <pointLight position={[0, 0, 0]} intensity={2} />
+    <div className="relative" style={{ width: 800, height: 600 }}>
+      <PlanetList
+        planets={planets}
+        onSelect={(p) => {
+          setSelectedPlanet(p)
+          onPlanetSelect?.(p)
+        }}
+        className="absolute left-4 top-4 z-10 w-40"
+      />
+      <Canvas
+        style={{ width: "100%", height: "100%" }}
+        camera={{ position: [0, 20, 40], fov: 60 }}
+      >
+        <ambientLight intensity={0.5} />
+        <pointLight position={[0, 0, 0]} intensity={2} />
 
-      <mesh>
-        <sphereGeometry args={[500, 64, 64]} />
-        <meshBasicMaterial color="black" side={THREE.BackSide} />
-      </mesh>
+        <mesh>
+          <sphereGeometry args={[500, 64, 64]} />
+          <meshBasicMaterial color="black" side={THREE.BackSide} />
+        </mesh>
 
-      <points>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            array={starPositions}
-            count={starPositions.length / 3}
-            itemSize={3}
+        <points>
+          <bufferGeometry>
+            <bufferAttribute
+              attach="attributes-position"
+              array={starPositions}
+              count={starPositions.length / 3}
+              itemSize={3}
+            />
+          </bufferGeometry>
+          <pointsMaterial color="white" size={0.5} sizeAttenuation />
+        </points>
+
+        <mesh>
+          <sphereGeometry args={[7, 32, 32]} />
+          <meshStandardMaterial
+            color="yellow"
+            emissive="yellow"
+            emissiveIntensity={1.5}
+            /* map={sunTexture} */
+            /* emissiveMap={sunTexture} */
           />
-        </bufferGeometry>
-        <pointsMaterial color="white" size={0.5} sizeAttenuation />
-      </points>
+        </mesh>
 
-      <mesh>
-        <sphereGeometry args={[7, 32, 32]} />
-        <meshStandardMaterial
-          color="yellow"
-          emissive="yellow"
-          emissiveIntensity={1.5}
-          /* map={sunTexture} */
-          /* emissiveMap={sunTexture} */
-        />
-      </mesh>
+        {planets.map((p) => (
+          <PlanetMesh
+            key={p.id}
+            {...p}
+            onPositionChange={(pos) => (planetPositions.current[p.id] = pos.clone())}
+          />
+        ))}
 
-      {planets.map((p) => (
-        <PlanetMesh key={p.id} {...p} />
-      ))}
-
-      <SpaceControls />
-      <SceneCleanup />
-    </Canvas>
+        <SpaceControls />
+        <CameraController target={selectedPlanet} planetPositions={planetPositions} />
+        <SceneCleanup />
+      </Canvas>
+    </div>
   )
 }
 
