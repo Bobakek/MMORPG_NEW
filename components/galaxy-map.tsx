@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { StarMap } from "./star-map"
+import { SolarSystemView } from "./solar-system-view"
 import { MiningInterface } from "./mining-interface"
 import { ProcessingWindow } from "./processing-window"
 import { useGalaxyMap } from "@/hooks/use-galaxy-map"
@@ -65,15 +66,19 @@ export default function GalaxyMap({ onBack }: GalaxyMapProps) {
 
   return (
     <div className="space-y-4">
-      <StarMap
-        starSystems={starSystems}
-        playerLocation={playerLocation}
-        destination={destination}
-        selectedSystem={selectedSystem}
-        traveling={traveling}
-        selectSystem={selectSystem}
-        getSecurityColor={getSecurityColor}
-      />
+      {selectedSystem?.id === playerLocation ? (
+        <SolarSystemView />
+      ) : (
+        <StarMap
+          starSystems={starSystems}
+          playerLocation={playerLocation}
+          destination={destination}
+          selectedSystem={selectedSystem}
+          traveling={traveling}
+          selectSystem={selectSystem}
+          getSecurityColor={getSecurityColor}
+        />
+      )}
 
       {traveling && (
         <div className="space-y-2">
