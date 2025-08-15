@@ -16,6 +16,15 @@ import { useNavigation } from "@/hooks/use-navigation"
 import { usePlayer } from "@/hooks/use-player"
 import { Progress } from "@/components/ui/progress"
 
+function mulberry32(a: number) {
+  return function () {
+    let t = (a += 0x6d2b79f5)
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
 const Page = () => {
   const {
     currentView,
@@ -29,17 +38,16 @@ const Page = () => {
   const { level, experience, nextLevelExp } = usePlayer()
   const levelProgress = (experience / nextLevelExp) * 100
 
-  const stars = useMemo(
-    () =>
-      Array.from({ length: 300 }, (_, i) => ({
-        id: i,
-        left: `${Math.random() * 100}%`,
-        top: `${Math.random() * 100}%`,
-        animationDelay: `${Math.random() * 3}s`,
-        animationDuration: `${2 + Math.random() * 2}s`,
-      })),
-    []
-  )
+  const stars = useMemo(() => {
+    const rng = mulberry32(123456)
+    return Array.from({ length: 300 }, (_, i) => ({
+      id: i,
+      left: `${rng() * 100}%`,
+      top: `${rng() * 100}%`,
+      animationDelay: `${rng() * 3}s`,
+      animationDuration: `${2 + rng() * 2}s`,
+    }))
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-black relative">
