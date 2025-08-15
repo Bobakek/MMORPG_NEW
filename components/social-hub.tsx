@@ -2,7 +2,17 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, MessageSquare, Building, Users, Send, UserPlus, Mail, Shield } from "lucide-react"
+import {
+  ArrowLeft,
+  MessageSquare,
+  Building,
+  Users,
+  Send,
+  UserPlus,
+  Mail,
+  Shield,
+  Check,
+} from "lucide-react"
 import { useSocialHub } from "@/hooks/use-social-hub"
 
 interface SocialHubProps {
@@ -17,8 +27,13 @@ export function SocialHub({ onBack }: SocialHubProps) {
     filteredMessages,
     onlinePlayers,
     corporations,
+    friends,
+    friendRequests,
     setChatMessage,
     sendMessage,
+    addFriend,
+    blockUser,
+    sendPrivateMessage,
     switchTab,
     switchChannel,
   } = useSocialHub()
@@ -231,51 +246,153 @@ export function SocialHub({ onBack }: SocialHubProps) {
         )}
 
         {activeTab === "players" && (
-          <Card className="bg-slate-900/80 backdrop-blur-sm border-amber-600/30">
-            <CardHeader>
-              <CardTitle className="text-amber-400">Online Players ({onlinePlayers.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {onlinePlayers.map((player) => (
-                  <div key={player.id} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-amber-600 to-rose-600 rounded-full flex items-center justify-center font-bold">
-                        {player.name[0]}
+          <div className="space-y-6">
+            <Card className="bg-slate-900/80 backdrop-blur-sm border-amber-600/30">
+              <CardHeader>
+                <CardTitle className="text-amber-400">Friend Requests</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {friendRequests.length ? (
+                  <div className="space-y-3">
+                    {friendRequests.map((req) => (
+                      <div
+                        key={req.id}
+                        className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg"
+                      >
+                        <span className="text-white">{req.name}</span>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            className="bg-amber-600 hover:bg-amber-700"
+                            onClick={() => addFriend(req)}
+                          >
+                            <Check className="w-3 h-3 mr-1" /> Accept
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-rose-600/50 text-rose-400 bg-transparent"
+                            onClick={() => blockUser(req)}
+                          >
+                            <Shield className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold text-white">{player.name}</p>
-                        <p className="text-sm text-slate-400">{player.corporation}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div
-                          className={`w-2 h-2 rounded-full ${
-                            player.status === "online"
-                              ? "bg-green-500"
-                              : player.status === "in-combat"
-                                ? "bg-red-500"
-                                : "bg-yellow-500"
-                          }`}
-                        />
-                        <span className="text-sm text-slate-300 capitalize">{player.status}</span>
-                      </div>
-                      <p className="text-xs text-slate-400">{player.location}</p>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button size="sm" variant="outline" className="border-amber-600/50 text-amber-400 bg-transparent">
-                        <MessageSquare className="w-3 h-3" />
-                      </Button>
-                      <Button size="sm" variant="outline" className="border-rose-600/50 text-rose-400 bg-transparent">
-                        <UserPlus className="w-3 h-3" />
-                      </Button>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                ) : (
+                  <p className="text-sm text-slate-400">No pending requests</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="bg-slate-900/80 backdrop-blur-sm border-amber-600/30">
+              <CardHeader>
+                <CardTitle className="text-amber-400">Friends ({friends.length})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {friends.length ? (
+                  <div className="space-y-3">
+                    {friends.map((friend) => (
+                      <div
+                        key={friend.id}
+                        className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg"
+                      >
+                        <span className="text-white">{friend.name}</span>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-amber-600/50 text-amber-400 bg-transparent"
+                            onClick={() => sendPrivateMessage(friend.name, "Hello")}
+                          >
+                            <MessageSquare className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-rose-600/50 text-rose-400 bg-transparent"
+                            onClick={() => blockUser(friend)}
+                          >
+                            <Shield className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-400">No friends yet</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="bg-slate-900/80 backdrop-blur-sm border-amber-600/30">
+              <CardHeader>
+                <CardTitle className="text-amber-400">Online Players ({onlinePlayers.length})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {onlinePlayers.map((player) => (
+                    <div
+                      key={player.id}
+                      className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-amber-600 to-rose-600 rounded-full flex items-center justify-center font-bold">
+                          {player.name[0]}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-white">{player.name}</p>
+                          <p className="text-sm text-slate-400">{player.corporation}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div
+                            className={`w-2 h-2 rounded-full ${
+                              player.status === "online"
+                                ? "bg-green-500"
+                                : player.status === "in-combat"
+                                  ? "bg-red-500"
+                                  : "bg-yellow-500"
+                            }`}
+                          />
+                          <span className="text-sm text-slate-300 capitalize">{player.status}</span>
+                        </div>
+                        <p className="text-xs text-slate-400">{player.location}</p>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-amber-600/50 text-amber-400 bg-transparent"
+                          onClick={() => sendPrivateMessage(player.name, "Hello")}
+                        >
+                          <MessageSquare className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-amber-600/50 text-amber-400 bg-transparent"
+                          onClick={() => addFriend({ id: player.id, name: player.name })}
+                        >
+                          <UserPlus className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-rose-600/50 text-rose-400 bg-transparent"
+                          onClick={() => blockUser({ id: player.id, name: player.name })}
+                        >
+                          <Shield className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </div>

@@ -47,3 +47,25 @@ export const corporations: Corporation[] = [
     founded: "2024-01-08",
   },
 ]
+
+export interface FriendRequest {
+  id: number
+  name: string
+}
+
+export interface FriendStatus {
+  id: number
+  name: string
+}
+
+export const friendRequests: FriendRequest[] = [
+  { id: 6, name: "GalaxyRanger" },
+]
+
+export const friendsList: FriendStatus[] = [
+  { id: 7, name: "StarGazer" },
+]
+
+export const blockedUsersList: FriendStatus[] = [
+  { id: 8, name: "PirateKing" },
+]
