@@ -15,7 +15,18 @@ export function BattleLogPanel({ log }: BattleLogPanelProps) {
       </CardHeader>
       <CardContent className="space-y-1 max-h-[400px] overflow-y-auto">
         {log.map((entry) => (
-          <div key={entry.id} className="text-sm text-slate-300">
+          <div
+            key={entry.id}
+            className={`text-sm ${
+              entry.type === "damage"
+                ? "text-red-400"
+                : entry.type === "miss"
+                ? "text-yellow-400"
+                : entry.type === "destroy"
+                ? "text-orange-500"
+                : "text-slate-300"
+            }`}
+          >
             {entry.message}
           </div>
         ))}

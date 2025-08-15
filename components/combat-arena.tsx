@@ -63,7 +63,12 @@ export function CombatArena({ onBack }: CombatArenaProps) {
               ))}
             </CardContent>
           </Card>
-          <TargetPanel enemyShips={enemyShips} selectedTarget={selectedTarget} onSelect={handleTargetSelect} />
+          <TargetPanel
+            enemyShips={enemyShips}
+            selectedTarget={selectedTarget}
+            onSelect={handleTargetSelect}
+            playerShip={playerShip}
+          />
         </div>
         <WeaponPanel ship={playerShip} onAttack={handleAttack} />
         <BattleLogPanel log={battleLog} />
