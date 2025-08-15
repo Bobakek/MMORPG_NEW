@@ -111,7 +111,7 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
   const [selectedPlanet, setSelectedPlanet] = useState<OrbitPlanet | null>(null)
 
   return (
-    <div className="relative" style={{ width: 800, height: 600 }}>
+    <div className="relative w-full h-screen">
       <PlanetList
         planets={planets}
         onSelect={(p) => {
