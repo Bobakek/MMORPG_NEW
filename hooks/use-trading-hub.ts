@@ -3,12 +3,14 @@
 import { useState } from "react"
 import type { MarketItem } from "@/data/trading"
 import { marketItems, markets } from "@/data"
+import { useInventory } from "@/hooks/use-inventory"
 
 export function useTradingHub() {
   const [selectedMarket, setSelectedMarket] = useState("Jita IV")
   const [selectedCategory, setSelectedCategory] = useState<"all" | MarketItem["category"]>("all")
   const [wallet] = useState(125000000) // 125M ISK
   const [selectedItem, setSelectedItem] = useState<MarketItem | null>(null)
+  const { addResource, getQuantity, removeResource } = useInventory()
 
   const filteredItems = marketItems.filter((item) => selectedCategory === "all" || item.category === selectedCategory)
 
@@ -40,17 +42,22 @@ export function useTradingHub() {
   const buyItem = (item: MarketItem, quantity = 1) => {
     const totalCost = item.buyPrice * quantity
     if (totalCost <= wallet) {
+      addResource(item.name, quantity)
       console.log(`Buying ${quantity}x ${item.name} for ${formatISK(totalCost)}`)
-      // In a real app, this would update the wallet and inventory
     } else {
       console.log("Insufficient funds")
     }
   }
 
   const sellItem = (item: MarketItem, quantity = 1) => {
-    const totalValue = item.sellPrice * quantity
-    console.log(`Selling ${quantity}x ${item.name} for ${formatISK(totalValue)}`)
-    // In a real app, this would update the wallet and inventory
+    const owned = getQuantity(item.name)
+    if (owned >= quantity) {
+      const totalValue = item.sellPrice * quantity
+      removeResource(item.name, quantity)
+      console.log(`Selling ${quantity}x ${item.name} for ${formatISK(totalValue)}`)
+    } else {
+      console.log("Insufficient quantity")
+    }
   }
 
   return {

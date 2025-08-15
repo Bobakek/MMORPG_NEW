@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useInventory } from "@/hooks/use-inventory"
 import type {
   MiningTarget,
   ProcessingRecipe,
@@ -24,6 +25,7 @@ export interface ProcessingState {
 }
 
 export function useResourceOperations(_selectedSystem: StarSystem | null) {
+  const { addResource } = useInventory()
   const [miningState, setMiningState] = useState<MiningState>({
     isActive: false,
     target: null,
@@ -55,6 +57,7 @@ export function useResourceOperations(_selectedSystem: StarSystem | null) {
         const progress = prev.progress + 10
         if (progress >= 100 && prev.target) {
           const resource = prev.target.resources[0]
+          addResource(resource.type, resource.amount)
           setMinedResources((r) => [...r, { type: resource.type, amount: resource.amount }])
           return { isActive: false, target: null, progress: 0, yieldRate: 1, laserActive: false }
         }
@@ -81,6 +84,7 @@ export function useResourceOperations(_selectedSystem: StarSystem | null) {
         const progress = prev.progress + 10
         if (progress >= 100 && prev.selectedRecipe) {
           prev.selectedRecipe.outputs.forEach((o) => {
+            addResource(o.type, o.amount)
             setProcessedResources((r) => {
               const existing = r.find((res) => res.type === o.type)
               if (existing) {
