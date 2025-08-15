@@ -122,7 +122,7 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
       />
       <Canvas
         style={{ width: "100%", height: "100%" }}
-        camera={{ position: [0, 20, 40], fov: 60 }}
+        camera={{ position: [0, 40, 80], fov: 60 }}
       >
         <ambientLight intensity={0.5} />
         <pointLight position={[0, 0, 0]} intensity={2} />
