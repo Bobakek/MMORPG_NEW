@@ -14,7 +14,7 @@ import { TradingHub } from "@/components/trading-hub"
 import { Starfield } from "@/components/starfield"
 
 import { useNavigation } from "@/hooks/use-navigation"
-import { usePlayer } from "@/hooks/use-player"
+import { useStore } from "@/store"
 import { Progress } from "@/components/ui/progress"
 
 const Page = () => {
@@ -27,7 +27,7 @@ const Page = () => {
     navigateToSocial,
     navigateToTrading,
   } = useNavigation()
-  const { level, experience, nextLevelExp } = usePlayer()
+  const { level, experience, nextLevelExp } = useStore((s) => s.player)
   const levelProgress = (experience / nextLevelExp) * 100
 
   return (

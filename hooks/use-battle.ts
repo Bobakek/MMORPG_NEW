@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useReducer } from "react"
 import type { BattleShip, BattleLog } from "@/types"
-import { usePlayer } from "./use-player"
+import { useStore } from "@/store"
 
 interface Mission {
   id: string
@@ -94,7 +94,7 @@ export function useBattle() {
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null)
   const [isInCombat, setIsInCombat] = useState(true)
 
-  const { addExperience } = usePlayer()
+  const addExperience = useStore((s) => s.addExperience)
 
   const createLog = (message: string, type: BattleLog["type"]): BattleLog => ({
     id: Date.now().toString(),

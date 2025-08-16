@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import type { MarketItem } from "@/data/trading"
 import { marketItems, markets, categoryConfig } from "@/data"
-import { useInventory } from "@/hooks/use-inventory"
+import { useStore } from "@/store"
 
 export function useTradingHub() {
   const [selectedMarket, setSelectedMarket] = useState("Jita IV")
@@ -12,7 +12,11 @@ export function useTradingHub() {
   const [selectedItem, setSelectedItem] = useState<MarketItem | null>(null)
   const [items, setItems] = useState<MarketItem[]>(marketItems)
   const [orders, setOrders] = useState<LimitOrder[]>([])
-  const { addResource, getQuantity, removeResource } = useInventory()
+  const { addResource, getQuantity, removeResource } = useStore((s) => ({
+    addResource: s.addResource,
+    getQuantity: s.getQuantity,
+    removeResource: s.removeResource,
+  }))
 
   const filteredItems = items.filter((item) => selectedCategory === "all" || item.category === selectedCategory)
 

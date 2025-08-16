@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useInventory } from "@/hooks/use-inventory"
+import { useStore } from "@/store"
 import type {
   MiningTarget,
   ProcessingRecipe,
@@ -25,7 +25,7 @@ export interface ProcessingState {
 }
 
 export function useResourceOperations(_selectedSystem: StarSystem | null) {
-  const { addResource } = useInventory()
+  const addResource = useStore((s) => s.addResource)
   const [miningState, setMiningState] = useState<MiningState>({
     isActive: false,
     target: null,
