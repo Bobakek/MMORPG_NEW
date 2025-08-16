@@ -27,8 +27,15 @@ function PlanetMesh({
   color,
   // texture,
   onPositionChange,
-}: OrbitPlanet & { onPositionChange: (pos: THREE.Vector3) => void }) {
-  const ref = useRef<THREE.Mesh>(null!)
+  onClick,
+  isSelected = false,
+}: OrbitPlanet & {
+  onPositionChange: (pos: THREE.Vector3) => void
+  onClick?: () => void
+  isSelected?: boolean
+}) {
+  const groupRef = useRef<THREE.Group>(null!)
+  const planetRef = useRef<THREE.Mesh>(null!)
   // const colorMap = useLoader(TextureLoader, texture)
 
   useFrame(({ clock }) => {
@@ -39,20 +46,33 @@ function PlanetMesh({
       Math.sin(t) * distance,
     )
     position.applyAxisAngle(new THREE.Vector3(1, 0, 0), inclination)
-    ref.current.position.copy(position)
-    ref.current.rotation.y += rotationSpeed
+    groupRef.current.position.copy(position)
+    planetRef.current.rotation.y += rotationSpeed
     onPositionChange(position)
   })
 
   return (
     <>
-      <mesh ref={ref}>
-        <sphereGeometry args={[size, 32, 32]} />
-        <meshStandardMaterial
-          color={color}
-          /* map={colorMap} */
-        />
-      </mesh>
+      <group ref={groupRef} onClick={onClick}>
+        <mesh ref={planetRef}>
+          <sphereGeometry args={[size, 32, 32]} />
+          <meshStandardMaterial
+            color={color}
+            /* map={colorMap} */
+          />
+        </mesh>
+        {isSelected && (
+          <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[size * 1.2, size * 1.4, 32]} />
+            <meshBasicMaterial
+              color="yellow"
+              side={THREE.DoubleSide}
+              transparent
+              opacity={0.5}
+            />
+          </mesh>
+        )}
+      </group>
       <mesh rotation={[-Math.PI / 2 + inclination, 0, 0]}>
         <ringGeometry args={[distance - 0.05, distance + 0.05, 64]} />
         <meshBasicMaterial color="gray" side={THREE.DoubleSide} />
@@ -168,6 +188,11 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
           <PlanetMesh
             key={p.id}
             {...p}
+            isSelected={selectedPlanet?.id === p.id}
+            onClick={() => {
+              setSelectedPlanet(p)
+              onPlanetSelect?.(p)
+            }}
             onPositionChange={(pos) => (planetPositions.current[p.id] = pos.clone())}
           />
         ))}
