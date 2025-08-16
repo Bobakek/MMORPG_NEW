@@ -3,7 +3,8 @@
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useBattle, usePlayer } from "@/hooks"
+import { useBattle } from "@/hooks"
+import { useStore } from "@/store"
 import { Progress } from "@/components/ui/progress"
 import { TargetPanel } from "./target-panel"
 import { WeaponPanel } from "./weapon-panel"
@@ -25,7 +26,7 @@ export function CombatArena({ onBack }: CombatArenaProps) {
     currentMission,
     startMission,
   } = useBattle()
-  const { level, experience, nextLevelExp } = usePlayer()
+  const { level, experience, nextLevelExp } = useStore((s) => s.player)
   const levelProgress = (experience / nextLevelExp) * 100
 
   return (

@@ -185,6 +185,9 @@ importers:
       zod:
         specifier: 3.25.67
         version: 3.25.67
+      zustand:
+        specifier: ^5.0.7
+        version: 5.0.7(@types/react@19.1.10)(react@19.1.1)(use-sync-external-store@1.5.0(react@19.1.1))
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4.1.9

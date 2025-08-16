@@ -2,10 +2,13 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { useInventory } from "@/hooks/use-inventory"
+import { useStore } from "@/store"
 
 export function InventoryPanel() {
-  const { inventory, removeResource } = useInventory()
+  const { inventory, removeResource } = useStore((s) => ({
+    inventory: s.inventory,
+    removeResource: s.removeResource,
+  }))
   const entries = Object.entries(inventory)
 
   return (
