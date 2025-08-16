@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import * as THREE from "three"
 import type { OrbitPlanet } from "@/components/solar-system-view"
 
@@ -8,9 +8,17 @@ export function useShipNavigation() {
   const [shipPosition, setShipPosition] = useState(() => new THREE.Vector3())
   const [destinationPlanet, setDestinationPlanet] =
     useState<OrbitPlanet | null>(null)
+  const [isTraveling, setIsTraveling] = useState(false)
+  const arrivalCallback = useRef<(() => void) | null>(null)
 
-  const sendShipToPlanet = (planet: OrbitPlanet) => {
+  const sendShipToPlanet = (
+    planet: OrbitPlanet,
+    onArrive?: () => void,
+  ) => {
+    if (isTraveling) return
     setDestinationPlanet(planet)
+    setIsTraveling(true)
+    arrivalCallback.current = onArrive || null
   }
 
   const updateShipPosition = (delta: number) => {
@@ -33,6 +41,9 @@ export function useShipNavigation() {
     if (distance < 0.1) {
       setShipPosition(target)
       setDestinationPlanet(null)
+      setIsTraveling(false)
+      arrivalCallback.current?.()
+      arrivalCallback.current = null
       return
     }
     direction.normalize()
@@ -45,5 +56,6 @@ export function useShipNavigation() {
     destinationPlanet,
     sendShipToPlanet,
     updateShipPosition,
+    isTraveling,
   }
 }
