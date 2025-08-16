@@ -29,6 +29,16 @@ export function CombatArena({ onBack }: CombatArenaProps) {
   const { level, experience, nextLevelExp } = useStore((s) => s.player)
   const levelProgress = (experience / nextLevelExp) * 100
 
+  const difficultyColors = {
+    easy: "bg-green-500",
+    medium: "bg-yellow-500",
+    hard: "bg-red-500",
+  }
+
+  const totalEnemies = currentMission?.enemies.length || 0
+  const missionProgress =
+    totalEnemies > 0 ? ((totalEnemies - enemyShips.length) / totalEnemies) * 100 : 0
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-black relative">
       <header className="relative z-10 border-b border-slate-700 bg-slate-900/80 backdrop-blur-sm">
@@ -67,9 +77,19 @@ export function CombatArena({ onBack }: CombatArenaProps) {
                   size="sm"
                   variant={currentMission?.id === mission.id ? "default" : "secondary"}
                   onClick={() => startMission(mission.id)}
-                  className="w-full"
+                  className="w-full flex flex-col items-start text-left gap-1"
                 >
                   {mission.name}
+                  <span className="text-xs text-slate-300">{mission.description}</span>
+                  <span className="text-xs text-slate-300">Reward: {mission.reward} XP</span>
+                  <span className="text-xs text-slate-300 flex items-center">
+                    <span
+                      className={`w-2 h-2 rounded-full mr-1 ${
+                        difficultyColors[mission.difficulty]
+                      }`}
+                    />
+                    {mission.difficulty}
+                  </span>
                 </Button>
               ))}
             </CardContent>
@@ -82,7 +102,11 @@ export function CombatArena({ onBack }: CombatArenaProps) {
           />
         </div>
         <WeaponPanel ship={playerShip} onAttack={handleAttack} />
-        <BattleLogPanel log={battleLog} />
+        <BattleLogPanel
+          log={battleLog}
+          progress={missionProgress}
+          reward={currentMission?.reward}
+        />
       </div>
     </div>
   )
