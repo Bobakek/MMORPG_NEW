@@ -7,6 +7,9 @@ import { useStore } from "@/store"
 interface Mission {
   id: string
   name: string
+  description: string
+  reward: number
+  difficulty: "easy" | "medium" | "hard"
   enemies: BattleShip[]
 }
 
@@ -33,6 +36,9 @@ const missions: Mission[] = [
   {
     id: "skirmish",
     name: "Pirate Skirmish",
+    description: "Clear out a small pirate scouting party.",
+    reward: 500,
+    difficulty: "easy",
     enemies: [
       {
         id: "enemy1",
@@ -69,6 +75,9 @@ const missions: Mission[] = [
   {
     id: "convoy",
     name: "Convoy Ambush",
+    description: "Escort a convoy under heavy attack.",
+    reward: 800,
+    difficulty: "medium",
     enemies: [
       {
         id: "enemy3",
@@ -336,7 +345,7 @@ export function useBattle() {
     if (isInCombat && enemyShips.length === 0) {
       dispatch({ type: "ADD_LOG", log: createLog(`Mission ${currentMission.name} completed`, "info") })
       setIsInCombat(false)
-      addExperience(500)
+      addExperience(currentMission.reward)
     }
   }, [enemyShips, isInCombat, currentMission, addExperience])
 
