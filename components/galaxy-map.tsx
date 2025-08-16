@@ -10,6 +10,7 @@ import { ProcessingWindow } from "./processing-window"
 import { useGalaxyMap } from "@/hooks/use-galaxy-map"
 import { useResourceOperations } from "@/hooks/use-resource-operations"
 import type { MiningTarget, ProcessingRecipe } from "@/types"
+import { PlanetDetails } from "./planet-details"
 
 const SolarSystemView = dynamic(
   () => import("./solar-system-view").then((m) => m.SolarSystemView),
@@ -81,6 +82,9 @@ export default function GalaxyMap({ onBack }: GalaxyMapProps) {
     selectSystem,
     initiateTravel,
     getSecurityColor,
+    selectedPlanet,
+    selectPlanet,
+    clearSelectedPlanet,
   } = useGalaxyMap()
   const {
     miningState,
@@ -120,7 +124,9 @@ export default function GalaxyMap({ onBack }: GalaxyMapProps) {
     startProcessing(recipe)
   }
 
-  const handlePlanetSelect = (_planet: OrbitPlanet) => {}
+  const handlePlanetSelect = (planet: OrbitPlanet) => {
+    selectPlanet(planet)
+  }
 
   return (
     <div className="space-y-4">
@@ -180,6 +186,7 @@ export default function GalaxyMap({ onBack }: GalaxyMapProps) {
         show={showProcessingInterface}
         onClose={() => setShowProcessingInterface(false)}
       />
+      <PlanetDetails planet={selectedPlanet} onClose={clearSelectedPlanet} />
     </div>
   )
 }

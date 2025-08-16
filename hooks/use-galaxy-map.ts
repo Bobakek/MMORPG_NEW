@@ -3,6 +3,7 @@
 import { useState } from "react"
 import type { StarSystem } from "@/types"
 import { starSystems } from "@/data"
+import type { OrbitPlanet } from "@/components/solar-system-view"
 
 export function useGalaxyMap() {
   const [selectedSystem, setSelectedSystem] = useState<StarSystem | null>(null)
@@ -12,6 +13,7 @@ export function useGalaxyMap() {
   const [travelProgress, setTravelProgress] = useState(0)
   const [fuel, setFuel] = useState(100)
   const [travelPath, setTravelPath] = useState<string[]>([])
+  const [selectedPlanet, setSelectedPlanet] = useState<OrbitPlanet | null>(null)
 
   const getSecurityColor = (security: StarSystem["security"]) => {
     switch (security) {
@@ -28,6 +30,10 @@ export function useGalaxyMap() {
 
   const selectSystem = (system: StarSystem) => {
     setSelectedSystem(system)
+  }
+
+  const selectPlanet = (planet: OrbitPlanet) => {
+    setSelectedPlanet(planet)
   }
 
   const findPath = (startId: string, goalId: string) => {
@@ -132,6 +138,10 @@ export function useGalaxyMap() {
     setSelectedSystem(null)
   }
 
+  const clearSelectedPlanet = () => {
+    setSelectedPlanet(null)
+  }
+
   return {
     starSystems,
     selectedSystem,
@@ -145,5 +155,8 @@ export function useGalaxyMap() {
     initiateTravel,
     clearSelection,
     getSecurityColor,
+    selectedPlanet,
+    selectPlanet,
+    clearSelectedPlanet,
   }
 }
