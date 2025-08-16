@@ -1,12 +1,14 @@
 "use client"
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
+import { OrbitControls } from "@react-three/drei"
 import { useRef, useEffect, useMemo, useState } from "react"
 import * as THREE from "three"
 import SpaceControls from "./space-controls"
 // import { TextureLoader } from "three"
 import type { Planet } from "@/types/resources"
 import { PlanetList } from "./ui/planet-list"
+import { Button } from "./ui/button"
 
 export interface OrbitPlanet extends Planet {
   distance: number
@@ -109,6 +111,7 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
 
   const planetPositions = useRef<Record<string, THREE.Vector3>>({})
   const [selectedPlanet, setSelectedPlanet] = useState<OrbitPlanet | null>(null)
+  const [firstPerson, setFirstPerson] = useState(false)
 
   return (
     <div className="relative w-full h-screen">
@@ -120,6 +123,12 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
         }}
         className="absolute left-4 top-4 z-10 w-40"
       />
+      <Button
+        onClick={() => setFirstPerson((prev) => !prev)}
+        className="absolute right-4 top-4 z-10"
+      >
+        {firstPerson ? "Switch to Orbit" : "Switch to First-Person"}
+      </Button>
       <Canvas
         style={{ width: "100%", height: "100%" }}
         camera={{ position: [0, 40, 80], fov: 60 }}
@@ -163,7 +172,11 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
           />
         ))}
 
-        <SpaceControls />
+        {firstPerson ? (
+          <SpaceControls />
+        ) : (
+          <OrbitControls enableZoom enablePan />
+        )}
         <CameraController target={selectedPlanet} planetPositions={planetPositions} />
         <SceneCleanup />
       </Canvas>
