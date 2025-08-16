@@ -116,14 +116,41 @@ function ShipMesh({
   shipRef: React.MutableRefObject<THREE.Mesh | null>
   position: THREE.Vector3
 }) {
-  useFrame(() => {
+  const particlesGeometry = useMemo(() => {
+    const count = 100
+    const positions = new Float32Array(count * 3)
+    for (let i = 0; i < count; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * 0.2
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 0.2
+      positions[i * 3 + 2] = Math.random() * -2
+    }
+    const geometry = new THREE.BufferGeometry()
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3))
+    return geometry
+  }, [])
+
+  const particlesRef = useRef<THREE.Points>(null!)
+
+  useFrame((_, delta) => {
     if (!shipRef.current) return
     shipRef.current.position.copy(position)
+    if (particlesRef.current) {
+      const pos = particlesRef.current.geometry
+        .getAttribute("position") as THREE.BufferAttribute
+      for (let i = 0; i < pos.count; i++) {
+        pos.array[i * 3 + 2] -= delta * 5
+        if (pos.array[i * 3 + 2] < -5) pos.array[i * 3 + 2] = Math.random() * -2
+      }
+      pos.needsUpdate = true
+    }
   })
   return (
     <mesh ref={shipRef}>
       <boxGeometry args={[1, 1, 3]} />
-      <meshStandardMaterial color="white" />
+      <meshStandardMaterial color="white" emissive="#444" emissiveIntensity={0.6} />
+      <points ref={particlesRef} geometry={particlesGeometry}>
+        <pointsMaterial color="orange" size={0.1} />
+      </points>
     </mesh>
   )
 }

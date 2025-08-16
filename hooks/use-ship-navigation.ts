@@ -10,6 +10,7 @@ export function useShipNavigation() {
     useState<OrbitPlanet | null>(null)
   const [isTraveling, setIsTraveling] = useState(false)
   const arrivalCallback = useRef<(() => void) | null>(null)
+  const velocity = useRef(0)
 
   const sendShipToPlanet = (
     planet: OrbitPlanet,
@@ -19,6 +20,7 @@ export function useShipNavigation() {
     setDestinationPlanet(planet)
     setIsTraveling(true)
     arrivalCallback.current = onArrive || null
+    velocity.current = 0
   }
 
   const updateShipPosition = (delta: number) => {
@@ -37,18 +39,46 @@ export function useShipNavigation() {
 
     const direction = target.clone().sub(shipPosition)
     const distance = direction.length()
-    const speed = 10
+
     if (distance < 0.1) {
       setShipPosition(target)
       setDestinationPlanet(null)
       setIsTraveling(false)
+      velocity.current = 0
       arrivalCallback.current?.()
       arrivalCallback.current = null
       return
     }
+
     direction.normalize()
-    const move = Math.min(speed * delta, distance)
-    setShipPosition((pos) => pos.clone().add(direction.multiplyScalar(move)))
+
+    const maxSpeed = 20
+    const acceleration = 5
+    const deceleration = 5
+    const brakingDistance =
+      (velocity.current * velocity.current) / (2 * deceleration)
+
+    if (distance <= brakingDistance) {
+      velocity.current = Math.max(velocity.current - deceleration * delta, 0)
+    } else {
+      velocity.current = Math.min(velocity.current + acceleration * delta, maxSpeed)
+    }
+
+    const move = Math.min(velocity.current * delta, distance)
+    const nextPos = shipPosition.clone().add(direction.multiplyScalar(move))
+
+    const orbitRadius = destinationPlanet.distance
+    if (Math.abs(nextPos.length() - orbitRadius) < 0.1) {
+      setShipPosition(nextPos)
+      setDestinationPlanet(null)
+      setIsTraveling(false)
+      velocity.current = 0
+      arrivalCallback.current?.()
+      arrivalCallback.current = null
+      return
+    }
+
+    setShipPosition(nextPos)
   }
 
   return {
