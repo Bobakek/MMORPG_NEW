@@ -16,7 +16,10 @@ export function PlanetList({ planets, onSelect, className }: PlanetListProps) {
           key={planet.id}
           variant="secondary"
           className="w-full"
-          onClick={() => onSelect(planet)}
+          onContextMenu={(e) => {
+            e.preventDefault()
+            onSelect(planet)
+          }}
         >
           {planet.name}
         </Button>
