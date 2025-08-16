@@ -183,14 +183,15 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
   const [firstPerson, setFirstPerson] = useState(false)
   const shipRef = useRef<THREE.Mesh>(null!)
 
+  const handlePlanetSelect = (p: OrbitPlanet) => {
+    sendShipToPlanet(p, () => onPlanetSelect?.(p))
+  }
+
   return (
     <div className="relative w-full h-screen">
       <PlanetList
         planets={planets}
-        onSelect={(p) => {
-          onPlanetSelect?.(p)
-          sendShipToPlanet(p)
-        }}
+        onSelect={handlePlanetSelect}
         className="absolute left-4 top-4 z-10 w-40"
       />
       <Button
@@ -239,10 +240,7 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
             key={p.id}
             {...p}
             isSelected={destinationPlanet?.id === p.id}
-            onClick={() => {
-              onPlanetSelect?.(p)
-              sendShipToPlanet(p)
-            }}
+            onClick={() => handlePlanetSelect(p)}
             onPositionChange={(pos) => (planetPositions.current[p.id] = pos.clone())}
           />
         ))}
