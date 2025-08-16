@@ -9,6 +9,7 @@ import SpaceControls from "./space-controls"
 import type { Planet } from "@/types/resources"
 import { PlanetList } from "./ui/planet-list"
 import { Button } from "./ui/button"
+import { useShipNavigation } from "@/hooks"
 
 export interface OrbitPlanet extends Planet {
   distance: number
@@ -100,6 +101,15 @@ function CameraController({
   return null
 }
 
+function ShipController({
+  update,
+}: {
+  update: (delta: number) => void
+}) {
+  useFrame((_, delta) => update(delta))
+  return null
+}
+
 function SceneCleanup() {
   const { gl } = useThree()
   useEffect(() => {
@@ -130,7 +140,12 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
   // const sunTexture = useLoader(TextureLoader, "/textures/sun.jpg")
 
   const planetPositions = useRef<Record<string, THREE.Vector3>>({})
-  const [selectedPlanet, setSelectedPlanet] = useState<OrbitPlanet | null>(null)
+  const {
+    shipPosition,
+    destinationPlanet,
+    sendShipToPlanet,
+    updateShipPosition,
+  } = useShipNavigation()
   const [firstPerson, setFirstPerson] = useState(false)
 
   return (
@@ -138,8 +153,8 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
       <PlanetList
         planets={planets}
         onSelect={(p) => {
-          setSelectedPlanet(p)
           onPlanetSelect?.(p)
+          sendShipToPlanet(p)
         }}
         className="absolute left-4 top-4 z-10 w-40"
       />
@@ -188,21 +203,30 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
           <PlanetMesh
             key={p.id}
             {...p}
-            isSelected={selectedPlanet?.id === p.id}
+            isSelected={destinationPlanet?.id === p.id}
             onClick={() => {
-              setSelectedPlanet(p)
               onPlanetSelect?.(p)
+              sendShipToPlanet(p)
             }}
             onPositionChange={(pos) => (planetPositions.current[p.id] = pos.clone())}
           />
         ))}
+
+        <mesh
+          position={[shipPosition.x, shipPosition.y, shipPosition.z]}
+        >
+          <sphereGeometry args={[0.5, 16, 16]} />
+          <meshStandardMaterial color="white" />
+        </mesh>
+
+        <ShipController update={updateShipPosition} />
 
         {firstPerson ? (
           <SpaceControls />
         ) : (
           <OrbitControls enableZoom enablePan />
         )}
-        <CameraController target={selectedPlanet} planetPositions={planetPositions} />
+        <CameraController target={destinationPlanet} planetPositions={planetPositions} />
         <SceneCleanup />
       </Canvas>
     </div>
