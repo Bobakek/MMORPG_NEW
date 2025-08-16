@@ -61,10 +61,14 @@ export function SpaceControls() {
     const dom = gl.domElement
     const handleClick = () => {
       if (!document.pointerLockElement) {
-        try {
-          controlsRef.current?.lock()
-        } catch (err) {
-          console.error("Pointer lock failed", err)
+        if (dom.isConnected || document.contains(dom)) {
+          try {
+            controlsRef.current?.lock()
+          } catch (err) {
+            console.error("Pointer lock failed", err)
+          }
+        } else {
+          console.warn("Pointer lock skipped: canvas is not in the DOM")
         }
       }
     }
