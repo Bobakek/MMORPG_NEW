@@ -1,7 +1,6 @@
 "use client"
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
-import { OrbitControls } from "@react-three/drei"
 import { useRef, useEffect, useMemo, useState } from "react"
 import * as THREE from "three"
 import SpaceControls from "./space-controls"
@@ -110,6 +109,41 @@ function ShipController({
   return null
 }
 
+function ShipMesh({
+  shipRef,
+  position,
+}: {
+  shipRef: React.MutableRefObject<THREE.Mesh | null>
+  position: THREE.Vector3
+}) {
+  useFrame(() => {
+    if (!shipRef.current) return
+    shipRef.current.position.copy(position)
+  })
+  return (
+    <mesh ref={shipRef}>
+      <boxGeometry args={[1, 1, 3]} />
+      <meshStandardMaterial color="white" />
+    </mesh>
+  )
+}
+
+function ThirdPersonCameraController({
+  shipRef,
+}: {
+  shipRef: React.MutableRefObject<THREE.Mesh | null>
+}) {
+  const { camera } = useThree()
+  const offset = useMemo(() => new THREE.Vector3(0, 5, 10), [])
+  useFrame(() => {
+    if (!shipRef.current) return
+    const targetPosition = shipRef.current.position.clone().add(offset)
+    camera.position.copy(targetPosition)
+    camera.lookAt(shipRef.current.position)
+  })
+  return null
+}
+
 function SceneCleanup() {
   const { gl } = useThree()
   useEffect(() => {
@@ -147,6 +181,7 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
     updateShipPosition,
   } = useShipNavigation()
   const [firstPerson, setFirstPerson] = useState(false)
+  const shipRef = useRef<THREE.Mesh>(null!)
 
   return (
     <div className="relative w-full h-screen">
@@ -212,19 +247,14 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
           />
         ))}
 
-        <mesh
-          position={[shipPosition.x, shipPosition.y, shipPosition.z]}
-        >
-          <sphereGeometry args={[0.5, 16, 16]} />
-          <meshStandardMaterial color="white" />
-        </mesh>
+        <ShipMesh shipRef={shipRef} position={shipPosition} />
 
         <ShipController update={updateShipPosition} />
 
         {firstPerson ? (
           <SpaceControls />
         ) : (
-          <OrbitControls enableZoom enablePan />
+          <ThirdPersonCameraController shipRef={shipRef} />
         )}
         <CameraController target={destinationPlanet} planetPositions={planetPositions} />
         <SceneCleanup />
