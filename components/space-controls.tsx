@@ -53,7 +53,7 @@ export function SpaceControls() {
   }, [])
 
   useEffect(() => {
-    setSupported(typeof document !== "undefined" && "pointerLockElement" in document)
+    setSupported(typeof document !== "undefined" && !!document.body?.requestPointerLock)
   }, [])
 
   useEffect(() => {
