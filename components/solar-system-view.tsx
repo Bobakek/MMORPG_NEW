@@ -23,19 +23,17 @@ function PlanetMesh({
   size,
   speed,
   inclination,
-  rotationSpeed,
   color,
   // texture,
   onPositionChange,
-  onClick,
+  onSelect,
   isSelected = false,
 }: OrbitPlanet & {
   onPositionChange: (pos: THREE.Vector3) => void
-  onClick?: () => void
+  onSelect?: () => void
   isSelected?: boolean
 }) {
   const groupRef = useRef<THREE.Group>(null!)
-  const planetRef = useRef<THREE.Mesh>(null!)
   // const colorMap = useLoader(TextureLoader, texture)
 
   useFrame(({ clock }) => {
@@ -47,14 +45,19 @@ function PlanetMesh({
     )
     position.applyAxisAngle(new THREE.Vector3(1, 0, 0), inclination)
     groupRef.current.position.copy(position)
-    planetRef.current.rotation.y += rotationSpeed
     onPositionChange(position)
   })
 
   return (
     <>
-      <group ref={groupRef} onClick={onClick}>
-        <mesh ref={planetRef}>
+      <group
+        ref={groupRef}
+        onContextMenu={(e) => {
+          e.preventDefault()
+          onSelect?.()
+        }}
+      >
+        <mesh>
           <sphereGeometry args={[size, 32, 32]} />
           <meshStandardMaterial
             color={color}
@@ -211,6 +214,7 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
   const shipRef = useRef<THREE.Mesh>(null!)
 
   const handlePlanetSelect = (p: OrbitPlanet) => {
+    setFirstPerson(false)
     sendShipToPlanet(p, () => onPlanetSelect?.(p))
   }
 
@@ -267,7 +271,7 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
             key={p.id}
             {...p}
             isSelected={destinationPlanet?.id === p.id}
-            onClick={() => handlePlanetSelect(p)}
+            onSelect={() => handlePlanetSelect(p)}
             onPositionChange={(pos) => (planetPositions.current[p.id] = pos.clone())}
           />
         ))}
