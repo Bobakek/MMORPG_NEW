@@ -171,12 +171,12 @@ export function useBattle() {
         const weapon = player.weapons[weaponIndex]
         if (!weapon || weapon.currentCooldown > 0) return state
         const distance = calculateDistance(player, target)
-        const maxRange = 400
+        const maxRange = weapon.range ?? 400
         if (distance > maxRange) {
           return {
             ...state,
             battleLog: [
-              createLog(`Target out of range for ${weapon.name}`, "miss"),
+              createLog(`Target out of range (max ${maxRange}) for ${weapon.name}`, "miss"),
               ...state.battleLog.slice(0, 9),
             ],
           }
@@ -271,10 +271,12 @@ export function useBattle() {
       const weapon = enemy.weapons[0]
       if (!weapon || weapon.currentCooldown > 0) return
       const distance = calculateDistance(enemy, player)
-      const maxRange = 400
+      const maxRange = weapon.range ?? 400
       enemy.weapons[0].currentCooldown = weapon.cooldown
       if (distance > maxRange) {
-        logs.push(createLog(`${enemy.name}'s ${weapon.name} out of range`, "miss"))
+        logs.push(
+          createLog(`${enemy.name}'s ${weapon.name} out of range (max ${maxRange})`, "miss"),
+        )
         return
       }
       const hitChance = Math.random()
