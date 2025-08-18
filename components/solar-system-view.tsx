@@ -144,7 +144,7 @@ function ShipMesh({
         pos.array[i * 3 + 2] -= delta * 5
         if (pos.array[i * 3 + 2] < -5) pos.array[i * 3 + 2] = Math.random() * -2
       }
-      pos.needsUpdate = true
+  pos.needsUpdate = true
     }
   })
   return (
@@ -169,6 +169,7 @@ function ThirdPersonShipControls({
 }) {
   const move = useRef({ forward: false, backward: false, left: false, right: false })
   const velocity = useRef(0)
+  const rotating = useRef(false)
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -211,11 +212,38 @@ function ThirdPersonShipControls({
           break
       }
     }
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button === 2) rotating.current = true
+    }
+    const onMouseUp = (e: MouseEvent) => {
+      if (e.button === 2) rotating.current = false
+    }
+    const onMouseMove = (e: MouseEvent) => {
+      if (!rotating.current || !shipRef.current) return
+      const sensitivity = 0.002
+      shipRef.current.rotation.y -= e.movementX * sensitivity
+      shipRef.current.rotation.x -= e.movementY * sensitivity
+      const halfPi = Math.PI / 2
+      shipRef.current.rotation.x = Math.max(
+        -halfPi,
+        Math.min(halfPi, shipRef.current.rotation.x),
+      )
+    }
+    const onContextMenu = (e: MouseEvent) => e.preventDefault()
+
     window.addEventListener("keydown", onKeyDown)
     window.addEventListener("keyup", onKeyUp)
+    window.addEventListener("mousedown", onMouseDown)
+    window.addEventListener("mouseup", onMouseUp)
+    window.addEventListener("mousemove", onMouseMove)
+    window.addEventListener("contextmenu", onContextMenu)
     return () => {
       window.removeEventListener("keydown", onKeyDown)
       window.removeEventListener("keyup", onKeyUp)
+       window.removeEventListener("mousedown", onMouseDown)
+       window.removeEventListener("mouseup", onMouseUp)
+       window.removeEventListener("mousemove", onMouseMove)
+       window.removeEventListener("contextmenu", onContextMenu)
     }
   }, [])
 
@@ -247,7 +275,7 @@ function ThirdPersonShipControls({
       }
     }
 
-    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(
+    const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(
       shipRef.current.quaternion,
     )
     position.addScaledVector(forward, velocity.current * delta)
@@ -255,6 +283,24 @@ function ThirdPersonShipControls({
   return null
 }
 
+function ThirdPersonCameraController({
+  shipRef,
+}: {
+  shipRef: React.MutableRefObject<THREE.Mesh | null>
+}) {
+  const { camera } = useThree()
+  const offset = useMemo(() => new THREE.Vector3(0, 5, -10), [])
+  useFrame(() => {
+    if (!shipRef.current) return
+    const relativeOffset = offset
+      .clone()
+      .applyQuaternion(shipRef.current.quaternion)
+    const targetPosition = shipRef.current.position.clone().add(relativeOffset)
+    camera.position.lerp(targetPosition, 0.1)
+    camera.lookAt(shipRef.current.position)
+  })
+  return null
+}
 function ThirdPersonCameraController({
   shipRef,
 }: {
