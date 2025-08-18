@@ -26,11 +26,10 @@ export function useShipNavigation() {
   const updateShipPosition = (delta: number) => {
     if (!destinationPlanet) return
 
-    const t = (Date.now() / 1000) * destinationPlanet.speed
     const target = new THREE.Vector3(
-      Math.cos(t) * destinationPlanet.distance,
+      destinationPlanet.distance,
       0,
-      Math.sin(t) * destinationPlanet.distance,
+      0,
     )
     target.applyAxisAngle(
       new THREE.Vector3(1, 0, 0),
