@@ -144,7 +144,7 @@ function ShipMesh({
         pos.array[i * 3 + 2] -= delta * 5
         if (pos.array[i * 3 + 2] < -5) pos.array[i * 3 + 2] = Math.random() * -2
       }
-      pos.needsUpdate = true
+  pos.needsUpdate = true
     }
   })
   return (
@@ -283,6 +283,24 @@ function ThirdPersonShipControls({
   return null
 }
 
+function ThirdPersonCameraController({
+  shipRef,
+}: {
+  shipRef: React.MutableRefObject<THREE.Mesh | null>
+}) {
+  const { camera } = useThree()
+  const offset = useMemo(() => new THREE.Vector3(0, 5, -10), [])
+  useFrame(() => {
+    if (!shipRef.current) return
+    const relativeOffset = offset
+      .clone()
+      .applyQuaternion(shipRef.current.quaternion)
+    const targetPosition = shipRef.current.position.clone().add(relativeOffset)
+    camera.position.lerp(targetPosition, 0.1)
+    camera.lookAt(shipRef.current.position)
+  })
+  return null
+}
 function ThirdPersonCameraController({
   shipRef,
 }: {
