@@ -21,7 +21,6 @@ export interface OrbitPlanet extends Planet {
 function PlanetMesh({
   distance,
   size,
-  speed,
   inclination,
   color,
   // texture,
@@ -36,17 +35,16 @@ function PlanetMesh({
   const groupRef = useRef<THREE.Group>(null!)
   // const colorMap = useLoader(TextureLoader, texture)
 
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime() * speed
+  useEffect(() => {
     const position = new THREE.Vector3(
-      Math.cos(t) * distance,
+      Math.cos(0) * distance,
       0,
-      Math.sin(t) * distance,
+      Math.sin(0) * distance,
     )
     position.applyAxisAngle(new THREE.Vector3(1, 0, 0), inclination)
     groupRef.current.position.copy(position)
     onPositionChange(position)
-  })
+  }, [distance, inclination, onPositionChange])
 
   return (
     <>
