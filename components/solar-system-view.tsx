@@ -221,7 +221,7 @@ function ThirdPersonShipControls({
       if (!rotating.current || !shipRef.current) return
       const sensitivity = 0.002
       shipRef.current.rotation.y -= e.movementX * sensitivity
-      shipRef.current.rotation.x -= e.movementY * sensitivity
+      shipRef.current.rotation.x += e.movementY * sensitivity
       const halfPi = Math.PI / 2
       shipRef.current.rotation.x = Math.max(
         -halfPi,
