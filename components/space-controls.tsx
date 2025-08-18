@@ -9,6 +9,7 @@ export function SpaceControls() {
   const { camera, gl } = useThree()
   const controlsRef = useRef<any>(null)
   const move = useRef({ forward: false, backward: false, left: false, right: false })
+  const velocity = useRef(new THREE.Vector3())
   const [supported, setSupported] = useState(false)
 
   useEffect(() => {
@@ -91,7 +92,9 @@ export function SpaceControls() {
   }, [gl, supported])
 
   useFrame((_, delta) => {
-    const speed = 10 * delta
+    const acceleration = 20
+    const maxSpeed = 10
+    const damping = 0.95
     const forward = new THREE.Vector3()
     camera.getWorldDirection(forward)
     forward.y = 0
@@ -100,10 +103,33 @@ export function SpaceControls() {
     const right = new THREE.Vector3()
     right.crossVectors(camera.up, forward).normalize()
 
-    if (move.current.forward) camera.position.addScaledVector(forward, speed)
-    if (move.current.backward) camera.position.addScaledVector(forward, -speed)
-    if (move.current.left) camera.position.addScaledVector(right, speed)
-    if (move.current.right) camera.position.addScaledVector(right, -speed)
+    let input = false
+    if (move.current.forward) {
+      velocity.current.addScaledVector(forward, acceleration * delta)
+      input = true
+    }
+    if (move.current.backward) {
+      velocity.current.addScaledVector(forward, -acceleration * delta)
+      input = true
+    }
+    if (move.current.left) {
+      velocity.current.addScaledVector(right, acceleration * delta)
+      input = true
+    }
+    if (move.current.right) {
+      velocity.current.addScaledVector(right, -acceleration * delta)
+      input = true
+    }
+
+    if (!input) {
+      velocity.current.multiplyScalar(damping)
+    }
+
+    if (velocity.current.length() > maxSpeed) {
+      velocity.current.setLength(maxSpeed)
+    }
+
+    camera.position.addScaledVector(velocity.current, delta)
   })
 
   if (!supported) return null
