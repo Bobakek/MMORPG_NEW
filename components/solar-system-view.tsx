@@ -158,17 +158,117 @@ function ShipMesh({
   )
 }
 
+function ThirdPersonShipControls({
+  shipRef,
+  position,
+  disabled = false,
+}: {
+  shipRef: React.MutableRefObject<THREE.Mesh | null>
+  position: THREE.Vector3
+  disabled?: boolean
+}) {
+  const move = useRef({ forward: false, backward: false, left: false, right: false })
+  const velocity = useRef(0)
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      switch (e.code) {
+        case "KeyW":
+        case "ArrowUp":
+          move.current.forward = true
+          break
+        case "KeyS":
+        case "ArrowDown":
+          move.current.backward = true
+          break
+        case "KeyA":
+        case "ArrowLeft":
+          move.current.left = true
+          break
+        case "KeyD":
+        case "ArrowRight":
+          move.current.right = true
+          break
+      }
+    }
+    const onKeyUp = (e: KeyboardEvent) => {
+      switch (e.code) {
+        case "KeyW":
+        case "ArrowUp":
+          move.current.forward = false
+          break
+        case "KeyS":
+        case "ArrowDown":
+          move.current.backward = false
+          break
+        case "KeyA":
+        case "ArrowLeft":
+          move.current.left = false
+          break
+        case "KeyD":
+        case "ArrowRight":
+          move.current.right = false
+          break
+      }
+    }
+    window.addEventListener("keydown", onKeyDown)
+    window.addEventListener("keyup", onKeyUp)
+    return () => {
+      window.removeEventListener("keydown", onKeyDown)
+      window.removeEventListener("keyup", onKeyUp)
+    }
+  }, [])
+
+  useFrame((_, delta) => {
+    if (disabled || !shipRef.current) return
+    const rotationSpeed = Math.PI
+    const acceleration = 20
+    const deceleration = 10
+    const maxSpeed = 50
+
+    if (move.current.left) shipRef.current.rotation.y += rotationSpeed * delta
+    if (move.current.right) shipRef.current.rotation.y -= rotationSpeed * delta
+
+    if (move.current.forward) {
+      velocity.current = Math.min(
+        velocity.current + acceleration * delta,
+        maxSpeed,
+      )
+    } else if (move.current.backward) {
+      velocity.current = Math.max(
+        velocity.current - acceleration * delta,
+        -maxSpeed / 2,
+      )
+    } else {
+      if (velocity.current > 0) {
+        velocity.current = Math.max(velocity.current - deceleration * delta, 0)
+      } else if (velocity.current < 0) {
+        velocity.current = Math.min(velocity.current + deceleration * delta, 0)
+      }
+    }
+
+    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(
+      shipRef.current.quaternion,
+    )
+    position.addScaledVector(forward, velocity.current * delta)
+  })
+  return null
+}
+
 function ThirdPersonCameraController({
   shipRef,
 }: {
   shipRef: React.MutableRefObject<THREE.Mesh | null>
 }) {
   const { camera } = useThree()
-  const offset = useMemo(() => new THREE.Vector3(0, 5, 10), [])
+  const offset = useMemo(() => new THREE.Vector3(0, 5, -10), [])
   useFrame(() => {
     if (!shipRef.current) return
-    const targetPosition = shipRef.current.position.clone().add(offset)
-    camera.position.copy(targetPosition)
+    const relativeOffset = offset
+      .clone()
+      .applyQuaternion(shipRef.current.quaternion)
+    const targetPosition = shipRef.current.position.clone().add(relativeOffset)
+    camera.position.lerp(targetPosition, 0.1)
     camera.lookAt(shipRef.current.position)
   })
   return null
@@ -235,6 +335,7 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
     destinationPlanet,
     sendShipToPlanet,
     updateShipPosition,
+    isTraveling,
   } = useShipNavigation()
   const [firstPerson, setFirstPerson] = useState(false)
   const shipRef = useRef<THREE.Mesh>(null!)
@@ -309,7 +410,14 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
         {firstPerson ? (
           <SpaceControls />
         ) : (
-          <ThirdPersonCameraController shipRef={shipRef} />
+          <>
+            <ThirdPersonShipControls
+              shipRef={shipRef}
+              position={shipPosition}
+              disabled={isTraveling}
+            />
+            <ThirdPersonCameraController shipRef={shipRef} />
+          </>
         )}
         <OrbitViewController
           firstPerson={firstPerson}
