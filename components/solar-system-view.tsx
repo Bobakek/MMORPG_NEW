@@ -9,6 +9,7 @@ import type { Planet } from "@/types/resources"
 import { PlanetList } from "./ui/planet-list"
 import { Button } from "./ui/button"
 import { useShipNavigation } from "@/hooks"
+import { PlanetInteractionMenu } from "./planet-interaction-menu"
 
 export interface OrbitPlanet extends Planet {
   distance: number
@@ -331,6 +332,49 @@ function SceneCleanup() {
   return null
 }
 
+function PlanetProximityDetector({
+  shipRef,
+  planets,
+  planetPositions,
+  threshold,
+  dismissedPlanetId,
+  onChange,
+}: {
+  shipRef: React.MutableRefObject<THREE.Mesh | null>
+  planets: OrbitPlanet[]
+  planetPositions: React.MutableRefObject<Record<string, THREE.Vector3>>
+  threshold: number
+  dismissedPlanetId: React.MutableRefObject<string | null>
+  onChange: (planet: OrbitPlanet | null) => void
+}) {
+  const current = useRef<OrbitPlanet | null>(null)
+  useFrame(() => {
+    if (!shipRef.current) return
+    const shipPos = shipRef.current.position
+    let found: OrbitPlanet | null = null
+    for (const p of planets) {
+      const pos = planetPositions.current[p.id]
+      if (!pos) continue
+      if (pos.distanceTo(shipPos) < threshold) {
+        found = p
+        break
+      }
+    }
+    if (found) {
+      if (dismissedPlanetId.current === found.id) return
+      if (current.current?.id !== found.id) {
+        current.current = found
+        onChange(found)
+      }
+    } else if (current.current) {
+      current.current = null
+      dismissedPlanetId.current = null
+      onChange(null)
+    }
+  })
+  return null
+}
+
 interface SolarSystemViewProps {
   planets: OrbitPlanet[]
   onPlanetSelect?: (planet: OrbitPlanet) => void
@@ -365,10 +409,20 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
   } = useShipNavigation()
   const [firstPerson, setFirstPerson] = useState(false)
   const shipRef = useRef<THREE.Mesh>(null!)
+  const [nearbyPlanet, setNearbyPlanet] = useState<OrbitPlanet | null>(null)
+  const dismissedPlanetId = useRef<string | null>(null)
+  const proximityThreshold = 10
 
   const handlePlanetSelect = (p: OrbitPlanet) => {
     setFirstPerson(false)
     sendShipToPlanet(p, () => onPlanetSelect?.(p))
+  }
+
+  const handleInteractionClose = () => {
+    if (nearbyPlanet) {
+      dismissedPlanetId.current = nearbyPlanet.id
+      setNearbyPlanet(null)
+    }
   }
 
   return (
@@ -384,6 +438,12 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
       >
         {firstPerson ? "Switch to Orbit" : "Switch to First-Person"}
       </Button>
+      {nearbyPlanet && (
+        <PlanetInteractionMenu
+          planet={nearbyPlanet}
+          onClose={handleInteractionClose}
+        />
+      )}
       <Canvas
         style={{ width: "100%", height: "100%" }}
         camera={{ position: [0, 40, 80], fov: 60 }}
@@ -432,6 +492,15 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
         <ShipMesh shipRef={shipRef} position={shipPosition} />
 
         <ShipController update={updateShipPosition} />
+
+        <PlanetProximityDetector
+          shipRef={shipRef}
+          planets={planets}
+          planetPositions={planetPositions}
+          threshold={proximityThreshold}
+          dismissedPlanetId={dismissedPlanetId}
+          onChange={setNearbyPlanet}
+        />
 
         {firstPerson ? (
           <SpaceControls />
