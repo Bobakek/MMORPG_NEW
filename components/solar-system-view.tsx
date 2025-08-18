@@ -52,7 +52,7 @@ function PlanetMesh({
       <group
         ref={groupRef}
         onContextMenu={(e) => {
-          e.preventDefault()
+          e.nativeEvent.preventDefault()
           onSelect?.()
         }}
       >
