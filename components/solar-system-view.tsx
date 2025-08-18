@@ -174,6 +174,27 @@ function ThirdPersonCameraController({
   return null
 }
 
+function OrbitViewController({
+  firstPerson,
+  destinationPlanet,
+  maxDistance,
+}: {
+  firstPerson: boolean
+  destinationPlanet: OrbitPlanet | null
+  maxDistance: number
+}) {
+  const { camera } = useThree()
+  const wasFirstPerson = useRef(firstPerson)
+  useEffect(() => {
+    if (wasFirstPerson.current && !firstPerson && !destinationPlanet) {
+      camera.position.set(0, maxDistance * 2, maxDistance * 3)
+      camera.lookAt(0, 0, 0)
+    }
+    wasFirstPerson.current = firstPerson
+  }, [firstPerson, destinationPlanet, camera, maxDistance])
+  return null
+}
+
 function SceneCleanup() {
   const { gl } = useThree()
   useEffect(() => {
@@ -200,6 +221,11 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
     }
     return positions
   }, [])
+
+  const maxDistance = useMemo(
+    () => planets.reduce((max, p) => Math.max(max, p.distance), 0),
+    [planets],
+  )
 
   // const sunTexture = useLoader(TextureLoader, "/textures/sun.jpg")
 
@@ -285,6 +311,11 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
         ) : (
           <ThirdPersonCameraController shipRef={shipRef} />
         )}
+        <OrbitViewController
+          firstPerson={firstPerson}
+          destinationPlanet={destinationPlanet}
+          maxDistance={maxDistance}
+        />
         <CameraController target={destinationPlanet} planetPositions={planetPositions} />
         <SceneCleanup />
       </Canvas>
