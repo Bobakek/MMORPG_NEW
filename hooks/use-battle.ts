@@ -105,8 +105,13 @@ export function useBattle() {
 
   const addExperience = useStore((s) => s.addExperience)
 
+  let logCounter = 0
+
   const createLog = (message: string, type: BattleLog["type"]): BattleLog => ({
-    id: Date.now().toString(),
+    id:
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${logCounter++}`,
     timestamp: Date.now(),
     message,
     type,
