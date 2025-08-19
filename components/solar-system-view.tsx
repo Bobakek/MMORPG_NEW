@@ -284,18 +284,32 @@ function ThirdPersonShipControls({
 
 function ThirdPersonCameraController({
   shipRef,
+  sternGap = 5,
+  smoothingSpeed = 0.1,
 }: {
   shipRef: React.MutableRefObject<THREE.Mesh | null>
+  sternGap?: number
+  smoothingSpeed?: number
 }) {
   const { camera } = useThree()
-  const offset = useMemo(() => new THREE.Vector3(0, 5, -10), [])
+  const [sternOffset, setSternOffset] = useState(0)
+
+  useEffect(() => {
+    if (!shipRef.current) return
+    const box = new THREE.Box3().setFromObject(shipRef.current)
+    const size = new THREE.Vector3()
+    box.getSize(size)
+    setSternOffset(size.z / 2 + sternGap)
+  }, [shipRef, sternGap])
+
   useFrame(() => {
     if (!shipRef.current) return
-    const relativeOffset = offset
-      .clone()
-      .applyQuaternion(shipRef.current.quaternion)
+    const offset = new THREE.Vector3(0, 5, -sternOffset)
+    const relativeOffset = offset.applyQuaternion(
+      shipRef.current.quaternion,
+    )
     const targetPosition = shipRef.current.position.clone().add(relativeOffset)
-    camera.position.lerp(targetPosition, 0.1)
+    camera.position.lerp(targetPosition, smoothingSpeed)
     camera.lookAt(shipRef.current.position)
   })
   return null
