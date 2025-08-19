@@ -392,9 +392,14 @@ function PlanetProximityDetector({
 interface SolarSystemViewProps {
   planets: OrbitPlanet[]
   onPlanetSelect?: (planet: OrbitPlanet) => void
+  onNearbyPlanetChange?: (planet: OrbitPlanet | null) => void
 }
 
-export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProps) {
+export function SolarSystemView({
+  planets,
+  onPlanetSelect,
+  onNearbyPlanetChange,
+}: SolarSystemViewProps) {
   const starPositions = useMemo(() => {
     const count = 1000
     const positions = new Float32Array(count * 3)
@@ -436,6 +441,7 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
     if (nearbyPlanet) {
       dismissedPlanetId.current = nearbyPlanet.id
       setNearbyPlanet(null)
+      onNearbyPlanetChange?.(null)
     }
   }
 
@@ -513,7 +519,10 @@ export function SolarSystemView({ planets, onPlanetSelect }: SolarSystemViewProp
           planetPositions={planetPositions}
           threshold={proximityThreshold}
           dismissedPlanetId={dismissedPlanetId}
-          onChange={setNearbyPlanet}
+          onChange={(planet) => {
+            setNearbyPlanet(planet)
+            onNearbyPlanetChange?.(planet)
+          }}
         />
 
         {firstPerson ? (

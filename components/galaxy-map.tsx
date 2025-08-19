@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import { useState } from "react"
 import dynamic from "next/dynamic"
 import { StarMap } from "./star-map"
 import type { OrbitPlanet } from "./solar-system-view"
@@ -99,6 +100,15 @@ export default function GalaxyMap({ onBack }: GalaxyMapProps) {
     setShowProcessingInterface,
   } = useResourceOperations(selectedSystem)
 
+  const [nearbyPlanet, setNearbyPlanet] = useState<OrbitPlanet | null>(null)
+
+  const handleNearbyPlanetChange = (planet: OrbitPlanet | null) => {
+    setNearbyPlanet(planet)
+    if (!planet) {
+      clearSelectedPlanet()
+    }
+  }
+
   const handleStartMining = () => {
     if (!selectedSystem) return
     const target: MiningTarget = {
@@ -131,7 +141,11 @@ export default function GalaxyMap({ onBack }: GalaxyMapProps) {
   return (
     <div className="space-y-4">
       {selectedSystem?.id === playerLocation ? (
-        <SolarSystemView planets={systemPlanets} onPlanetSelect={handlePlanetSelect} />
+        <SolarSystemView
+          planets={systemPlanets}
+          onPlanetSelect={handlePlanetSelect}
+          onNearbyPlanetChange={handleNearbyPlanetChange}
+        />
       ) : (
         <StarMap
           starSystems={starSystems}
@@ -186,7 +200,9 @@ export default function GalaxyMap({ onBack }: GalaxyMapProps) {
         show={showProcessingInterface}
         onClose={() => setShowProcessingInterface(false)}
       />
-      <PlanetDetails planet={selectedPlanet} onClose={clearSelectedPlanet} />
+      {!nearbyPlanet && (
+        <PlanetDetails planet={selectedPlanet} onClose={clearSelectedPlanet} />
+      )}
     </div>
   )
 }
