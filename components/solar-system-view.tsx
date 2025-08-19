@@ -5,10 +5,11 @@ import { useRef, useEffect, useMemo, useState } from "react"
 import * as THREE from "three"
 import SpaceControls from "./space-controls"
 // import { TextureLoader } from "three"
-import type { Planet } from "@/types/resources"
+import type { Planet, MiningTarget } from "@/types"
 import { PlanetList } from "./ui/planet-list"
 import { Button } from "./ui/button"
 import { useShipNavigation } from "@/hooks"
+import { useResourceOperations } from "@/hooks/use-resource-operations"
 import { PlanetInteractionMenu } from "./planet-interaction-menu"
 
 export interface OrbitPlanet extends Planet {
@@ -426,6 +427,7 @@ export function SolarSystemView({
     updateShipPosition,
     isTraveling,
   } = useShipNavigation()
+  const { startMining } = useResourceOperations(null)
   const [firstPerson, setFirstPerson] = useState(false)
   const shipRef = useRef<THREE.Mesh>(null!)
   const [nearbyPlanet, setNearbyPlanet] = useState<OrbitPlanet | null>(null)
@@ -445,6 +447,34 @@ export function SolarSystemView({
     }
   }
 
+  const handleExplore = () => {
+    setFirstPerson(true)
+  }
+
+  const handleTrade = () => {
+    if (nearbyPlanet) {
+      console.log(`Opening trade interface for ${nearbyPlanet.name}`)
+    }
+  }
+
+  const handleMine = () => {
+    if (!nearbyPlanet) return
+    const pos = planetPositions.current[nearbyPlanet.id]
+    const position: [number, number, number] = pos
+      ? [pos.x, pos.y, pos.z]
+      : nearbyPlanet.position
+    const target: MiningTarget = {
+      id: nearbyPlanet.id,
+      name: nearbyPlanet.name,
+      position,
+      resources: [{ type: "Ore", amount: 100, rarity: "common" }],
+      health: 100,
+      maxHealth: 100,
+    }
+    startMining(target)
+    handleInteractionClose()
+  }
+
   return (
     <div className="relative w-full h-screen">
       <PlanetList
@@ -462,6 +492,9 @@ export function SolarSystemView({
         <PlanetInteractionMenu
           planet={nearbyPlanet}
           onClose={handleInteractionClose}
+          onExplore={handleExplore}
+          onTrade={handleTrade}
+          onMine={handleMine}
         />
       )}
       <Canvas
